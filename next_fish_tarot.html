@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#040816" />
+<title>次あなたが釣る魚占い - ULTRA GACHA</title>
+<style>
+:root{
+  --bg:#040816;
+  --bg2:#06162b;
+  --panel:rgba(8,14,33,.76);
+  --line:rgba(255,255,255,.12);
+  --text:#f5fbff;
+  --muted:#92a8c3;
+  --cyan:#50ebff;
+  --blue:#3a7cff;
+  --gold:#ffd449;
+  --pink:#ff5adb;
+  --orange:#ff7036;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Inter,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;color:var(--text);background:#01040b;overflow-x:hidden}
+body{
+  background:
+    radial-gradient(circle at 15% 10%, rgba(53,129,255,.16), transparent 26%),
+    radial-gradient(circle at 78% 20%, rgba(255,84,209,.10), transparent 24%),
+    radial-gradient(circle at 50% 120%, rgba(0,195,255,.20), transparent 38%),
+    linear-gradient(180deg,#081322 0%,#040816 52%,#02030a 100%);
+}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;opacity:.18;
+  background-image:
+    linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+  background-size:30px 30px;
+  mask-image:linear-gradient(#000,transparent 90%);
+}
+canvas#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:50}
+.app{position:relative;z-index:1;width:min(1220px,100%);margin:auto;padding:18px 14px 48px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.brand{display:flex;gap:12px;align-items:center}
+.logo{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(145deg,#10355c,#09111f);border:1px solid #68e9ff66;box-shadow:0 0 30px #00deff33,inset 0 0 28px #00deff22;font-size:28px}
+h1{margin:0;font-size:clamp(20px,4vw,34px);letter-spacing:.08em;text-shadow:0 0 28px #59e7ff55}
+.sub{font-size:12px;color:var(--muted);margin-top:4px;letter-spacing:.12em}
+.actions{display:flex;gap:8px}
+button{font:inherit;color:inherit}
+.icon-btn,.main-btn,.sub-btn,.chip-btn{
+  border:1px solid var(--line);background:rgba(8,17,39,.82);backdrop-filter:blur(14px);cursor:pointer;transition:.18s ease;
+}
+.icon-btn{width:44px;height:44px;border-radius:14px;font-size:18px}
+.icon-btn:hover,.sub-btn:hover,.chip-btn:hover{transform:translateY(-1px);border-color:#7cf2ff88}
+.main-btn{border-radius:999px;padding:14px 28px;font-weight:1000;letter-spacing:.22em;text-transform:uppercase;background:linear-gradient(135deg,#005fe7,#00c7ee);box-shadow:0 0 30px #00e0ff44}
+.main-btn:hover{transform:translateY(-2px);filter:brightness(1.1)}
+.main-btn:disabled,.sub-btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.sub-btn,.chip-btn{border-radius:999px;padding:11px 16px;color:#d7e6f4}
+.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
+.panel{border:1px solid var(--line);border-radius:24px;background:linear-gradient(145deg,rgba(11,25,54,.88),rgba(5,8,20,.92));box-shadow:0 28px 70px #0007,inset 0 1px rgba(255,255,255,.06);overflow:hidden;position:relative}
+.panel-inner{padding:16px}
+.hero{min-height:760px}
+.hero::before{content:"";position:absolute;inset:auto -25% -48% -25%;height:60%;background:radial-gradient(ellipse,rgba(0,132,255,.28),transparent 70%);filter:blur(6px)}
+.status-row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px;position:relative;z-index:2}
+.status-title{font-size:12px;color:#96adc9;letter-spacing:.18em;text-transform:uppercase}
+.status-main{display:flex;gap:10px;align-items:center;margin-top:7px;font-size:13px;color:#ddebff}
+.dot{width:9px;height:9px;border-radius:50%;background:#58f2ff;box-shadow:0 0 16px #58f2ff;animation:pulse 1.4s infinite}
+@keyframes pulse{50%{transform:scale(.72);opacity:.45}}
+.rates{text-align:right;font-size:11px;line-height:1.6;color:#9fb4cf}
+.rates b{display:block;color:#dceaf8;font-size:12px;margin-bottom:4px}
+.arena{position:relative;min-height:470px;display:flex;align-items:center;justify-content:center}
+.summon-altar{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;transition:.35s ease;z-index:2}
+.summon-altar.hidden{opacity:0;transform:scale(.94)}
+.altar-core{position:relative;width:min(82vw,420px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;
+  background:radial-gradient(circle,rgba(255,255,255,.08),rgba(0,210,255,.06) 36%, transparent 64%);
+  border:1px solid rgba(255,255,255,.14);box-shadow:0 0 50px rgba(0,210,255,.16),inset 0 0 55px rgba(0,200,255,.12)}
+.altar-ring,.altar-ring2,.altar-ring3{position:absolute;border-radius:50%;inset:6%;border:1px solid rgba(115,240,255,.32)}
+.altar-ring{animation:spin 12s linear infinite}
+.altar-ring2{inset:18%;border-style:dashed;animation:spin 16s linear infinite reverse}
+.altar-ring3{inset:32%;border-color:rgba(255,215,80,.28);animation:pulse 2.5s infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.altar-text{text-align:center;max-width:80%;line-height:1.8}
+.altar-text b{display:block;font-size:clamp(28px,5vw,44px);letter-spacing:.14em;text-shadow:0 0 24px #52efff99}
+.altar-text span{font-size:13px;color:#a7bfd9}
+.deck{position:relative;z-index:4;width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;opacity:0;transform:translateY(8px);transition:.35s ease;pointer-events:none}
+.deck.ready{opacity:1;transform:none;pointer-events:auto}
+.card{position:relative;aspect-ratio:2/3;min-height:205px;border:0;background:none;padding:0;cursor:pointer;opacity:0;transform:translateY(-160px) scale(.58) rotate(-8deg);perspective:1400px}
+.card.dealt{animation:deal .95s both cubic-bezier(.12,.9,.18,1)}
+@keyframes deal{
+  0%{opacity:0;transform:translateY(-190px) scale(.54) rotate(-14deg)}
+  55%{opacity:1;transform:translateY(22px) scale(1.03) rotate(2deg)}
+  100%{opacity:1;transform:none}
+}
+.card:hover:not(.locked):not(.revealed){transform:translateY(-8px) scale(1.02);opacity:1}
+.card.locked{cursor:default}
+.card-inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform 1.05s cubic-bezier(.14,.75,.15,1)}
+.card.revealed .card-inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;border-radius:22px;backface-visibility:hidden;overflow:hidden;border:1px solid rgba(255,255,255,.18);box-shadow:0 16px 38px #0009}
+.back{display:grid;place-items:center;background:
+  radial-gradient(circle at 50% 42%, rgba(107,233,255,.19), transparent 32%),
+  linear-gradient(145deg,rgba(58,191,255,.16),transparent 35%),
+  repeating-linear-gradient(45deg,transparent 0 9px,rgba(255,255,255,.03) 9px 10px),
+  radial-gradient(circle at center,#122d54,#08111f 68%)}
+.back::before{content:"";position:absolute;inset:8px;border-radius:18px;border:1px solid #64ebff4d;box-shadow:inset 0 0 32px #00b3ff22}
+.back::after{content:"";position:absolute;width:145%;height:42%;background:linear-gradient(90deg,transparent,#fff3,transparent);transform:rotate(-38deg);animation:shine 2.6s infinite}
+@keyframes shine{from{translate:-100% 0}to{translate:100% 0}}
+.sigil{width:60%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;border:2px solid #79f3ff88;box-shadow:0 0 32px #00e7ff55,inset 0 0 30px #00c8ff33;font-size:clamp(42px,8vw,76px);text-shadow:0 0 18px #6bf1ff;animation:float 2.8s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-6px) rotate(2deg)}}
+.card-num{position:absolute;bottom:15px;letter-spacing:.25em;font-size:11px;color:#98d8e8}
+.front{transform:rotateY(180deg);display:flex;flex-direction:column;justify-content:center;align-items:center;padding:12px;text-align:center}
+.front .rarity{font-size:clamp(26px,6vw,58px);font-weight:1000;letter-spacing:.08em;line-height:1}
+.front .fish-icon{font-size:clamp(42px,9vw,90px);margin:8px 0;filter:drop-shadow(0 12px 16px #0009)}
+.front .fish-name{font-size:clamp(14px,3.5vw,24px);font-weight:1000;line-height:1.2}
+.front small{margin-top:8px;color:#d7e8f5aa;font-size:10px}
+.card[data-rarity="R"] .front{background:radial-gradient(circle at 50% 25%,#72859d66,transparent 42%),linear-gradient(145deg,#2b3644,#111720)}
+.card[data-rarity="SR"] .front{background:radial-gradient(circle at 50% 25%,#2acbff88,transparent 43%),linear-gradient(145deg,#07567d,#071420)}
+.card[data-rarity="SSR"] .front{background:radial-gradient(circle at 50% 20%,#ffe66caa,transparent 42%),linear-gradient(145deg,#725410,#1c1405)}
+.card[data-rarity="UR"] .front{background:radial-gradient(circle at 50% 20%,#ff87f5aa,transparent 38%),conic-gradient(from 210deg,#2e0f69,#0b5c8e,#6d174e,#2e0f69)}
+.card[data-rarity="LR"] .front{background:radial-gradient(circle at 50% 20%,#fff7a8cc,transparent 26%),conic-gradient(from 180deg,#050505,#6d4d00,#050505,#9a0000,#050505);box-shadow:inset 0 0 44px #ffd84c55}
+.R{color:#dbe7f4}.SR{color:#67ebff}.SSR{color:#ffe36f}.UR{color:#ffd7ff;text-shadow:0 0 10px #fff,0 0 24px #ff57d0,0 0 36px #00d9ff}.LR{color:#fff3b3;text-shadow:0 0 10px #fff,0 0 20px #ffd73d,0 0 38px #ff4d00}
+.controls{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:14px}
+.helper{margin-top:10px;text-align:center;font-size:12px;color:#9eb1c9;min-height:18px}
+.result-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:14px}
+.panel-title{font-size:16px;letter-spacing:.08em;margin:0}
+.live-badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#8da4c2}
+.live-badge i{width:8px;height:8px;border-radius:50%;background:#56f4ff;box-shadow:0 0 10px #56f4ff;animation:pulse 1.2s infinite}
+.result-empty{font-size:13px;color:#8095ad;line-height:1.8}
+.result-card{display:grid;grid-template-columns:380px 1fr;gap:14px}
+.media-box{border:1px solid rgba(255,255,255,.12);border-radius:22px;background:linear-gradient(145deg,rgba(18,34,63,.78),rgba(6,10,24,.92));overflow:hidden;min-height:460px;display:flex;flex-direction:column;box-shadow:inset 0 0 30px rgba(0,213,255,.08)}
+.media-hero{position:relative;aspect-ratio:4/3;background:
+  radial-gradient(circle at 20% 15%,rgba(255,255,255,.08),transparent 18%),
+  linear-gradient(180deg,rgba(10,19,41,.2),rgba(2,7,17,.7)),
+  linear-gradient(135deg,#0e2746,#06101f 65%,#0a3c55)}
+.media-hero img,.media-hero video{width:100%;height:100%;object-fit:cover;display:block}
+.media-fallback{position:absolute;inset:0;display:grid;place-items:center;overflow:hidden}
+.media-fallback .ocean{position:absolute;inset:0;background:
+  radial-gradient(circle at 70% 20%,rgba(255,255,255,.10),transparent 15%),
+  radial-gradient(circle at 20% 30%,rgba(90,225,255,.08),transparent 18%),
+  linear-gradient(180deg,#0a3f67,#082241 50%,#041120);}
+.media-fallback .fish-silhouette{position:relative;font-size:110px;filter:drop-shadow(0 18px 20px #000b);animation:swim 4.8s ease-in-out infinite}
+@keyframes swim{0%,100%{transform:translateX(-18px) rotate(-2deg)}50%{transform:translateX(18px) rotate(2deg)}}
+.media-meta{padding:14px}
+.media-meta .rarity-line{font-size:14px;font-weight:1000;letter-spacing:.08em}
+.media-meta .name-line{font-size:28px;font-weight:1000;margin-top:4px}
+.asset-note{font-size:11px;color:#91a4bf;line-height:1.7;margin-top:8px}
+.info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.info-box{border:1px solid rgba(255,255,255,.10);border-radius:16px;background:rgba(255,255,255,.05);padding:12px}
+.info-box b{display:block;font-size:11px;color:#92a9c2;margin-bottom:5px;letter-spacing:.08em;text-transform:uppercase}
+.info-box span{display:block;font-size:13px;line-height:1.7}
+.fortune-block{margin-top:10px;padding:12px 14px;border:1px solid rgba(255,255,255,.10);border-radius:16px;background:rgba(255,255,255,.045);font-size:14px;line-height:1.85;color:#e3eef9}
+.tips{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.tip{border:1px solid rgba(255,255,255,.09);border-radius:16px;background:rgba(255,255,255,.05);padding:12px}
+.tip b{display:block;font-size:11px;color:#91a7c2;margin-bottom:6px;letter-spacing:.06em}
+.tip span{font-size:13px;line-height:1.7}
+.side-stack{display:flex;flex-direction:column;gap:14px}
+.side-card{border:1px solid var(--line);border-radius:24px;background:linear-gradient(145deg,rgba(11,25,54,.88),rgba(5,8,20,.92));box-shadow:0 24px 55px #0006}
+.side-card .panel-inner{padding:15px}
+.history{display:flex;flex-direction:column;gap:8px;max-height:220px;overflow:auto}
+.history-item{display:flex;justify-content:space-between;gap:8px;padding:8px 2px;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px}
+.history-item:last-child{border-bottom:0}.history-item time{color:#71879f;font-size:10px}
+.legend{font-size:13px;color:#d5e3f2;line-height:1.8}
+.legend small{display:block;color:#93aac4;margin-top:6px}
+.overlay{position:fixed;inset:0;display:none;place-items:center;pointer-events:none;z-index:40;background:radial-gradient(circle,transparent 12%,rgba(0,0,0,.65) 74%)}
+.overlay.active{display:grid}
+.omen{font-size:clamp(30px,9vw,86px);font-weight:1000;letter-spacing:.14em;opacity:0;transform:scale(.3);text-shadow:0 0 12px currentColor,0 0 38px currentColor}
+.overlay.active .omen{animation:omen 1.25s both cubic-bezier(.15,.92,.2,1)}
+@keyframes omen{20%{opacity:1;transform:scale(1.28) rotate(-2deg)}55%{opacity:1;transform:scale(.95)}100%{opacity:0;transform:scale(1.65)}}
+.flash{position:fixed;inset:0;background:white;pointer-events:none;opacity:0;z-index:45}
+.flash.go{animation:flash .7s ease-out}@keyframes flash{0%{opacity:0}12%{opacity:1}100%{opacity:0}}
+.lr-cinematic{position:fixed;inset:0;display:none;place-items:center;pointer-events:none;z-index:46;background:radial-gradient(circle at 50% 50%,rgba(94,0,0,.45),rgba(0,0,0,.88) 72%)}
+.lr-cinematic.show{display:grid}
+.lr-video-wrap{position:relative;width:min(94vw,860px);aspect-ratio:16/9;border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,.18);box-shadow:0 30px 90px #000c,0 0 50px rgba(255,96,0,.22)}
+.lr-video-wrap video{width:100%;height:100%;object-fit:cover;background:#000}
+.lr-fallback-scene{position:absolute;inset:0;background:
+  radial-gradient(circle at 50% 20%,rgba(255,255,255,.22),transparent 16%),
+  linear-gradient(180deg,#063f69 0%,#082445 35%,#050910 100%);overflow:hidden}
+.wave{position:absolute;inset:auto -20% -10%;height:54%;background:radial-gradient(ellipse at center,rgba(0,217,255,.18),transparent 70%);filter:blur(10px);animation:tide 3.5s ease-in-out infinite}
+@keyframes tide{50%{transform:translateY(-14px) scaleX(1.08)}}
+.swim-fish{position:absolute;left:-30%;top:40%;font-size:140px;filter:drop-shadow(0 12px 18px #000b);animation:lrSwim 4.4s linear forwards}
+@keyframes lrSwim{0%{transform:translateX(0) translateY(30px) scale(.7) rotate(6deg)}40%{transform:translateX(56vw) translateY(-15px) scale(1) rotate(-2deg)}100%{transform:translateX(112vw) translateY(12px) scale(1.18) rotate(4deg)}}
+.cinematic-caption{position:absolute;left:0;right:0;bottom:0;padding:18px 20px;background:linear-gradient(180deg,transparent,rgba(0,0,0,.75));font-size:26px;font-weight:1000;letter-spacing:.12em;text-shadow:0 0 18px #000}
+.lr-glow{position:absolute;inset:0;border-radius:24px;border:2px solid rgba(255,223,110,.75);box-shadow:inset 0 0 60px rgba(255,221,91,.25),0 0 60px rgba(255,135,0,.20)}
+.modal{border:1px solid rgba(255,255,255,.22);border-radius:22px;background:#081020ef;color:#edf7ff;width:min(580px,92vw);box-shadow:0 35px 90px #000b;padding:0;backdrop-filter:blur(18px)}
+.modal::backdrop{background:#01030bbb;backdrop-filter:blur(6px)}
+.modal-head{padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.10);display:flex;justify-content:space-between;align-items:center}
+.modal-body{padding:18px;line-height:1.8;font-size:13px;color:#d1deeb}
+.close{border:0;background:none;color:white;font-size:24px;cursor:pointer}
+.shake{animation:shake .55s linear}.shock{animation:shock .55s linear}
+@keyframes shake{0%,100%{transform:none}20%{transform:translate(-8px,4px) rotate(-.6deg)}40%{transform:translate(8px,-4px) rotate(.6deg)}60%{transform:translate(-5px,3px)}80%{transform:translate(5px,-2px)}}
+@keyframes shock{20%{filter:brightness(3)}40%{filter:invert(1)}100%{filter:none}}
+@media (max-width:980px){.grid{grid-template-columns:1fr}.hero{min-height:auto}.result-card{grid-template-columns:1fr}.media-box{min-height:auto}}
+@media (max-width:760px){
+  .app{padding:10px 9px 36px}
+  .sub{display:none}
+  .status-row{flex-direction:column}.rates{text-align:left}
+  .arena{min-height:370px}.deck{gap:8px}.card{min-height:150px}.face{border-radius:16px}
+  .result-card{grid-template-columns:1fr}.info-grid,.tips{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas>
+<div class="flash" id="flash"></div>
+<div class="overlay" id="overlay"><div class="omen" id="omen"></div></div>
+<div class="lr-cinematic" id="lrCinematic">
+  <div class="lr-video-wrap">
+    <video id="lrVideo" playsinline muted></video>
+    <div class="lr-fallback-scene" id="lrFallback">
+      <div class="wave"></div>
+      <div class="swim-fish" id="lrFish">🐉</div>
+      <div class="cinematic-caption" id="lrCaption">LEGEND RUSH</div>
+    </div>
+    <div class="lr-glow"></div>
+  </div>
+</div>
+
+<main class="app" id="app">
+  <header>
+    <div class="brand">
+      <div class="logo">🎣</div>
+      <div>
+        <h1>次あなたが釣る魚占い</h1>
+        <div class="sub">ULTRA FISH GACHA · CINEMATIC SUMMON · OVERKILL EFFECTS</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="icon-btn" id="soundBtn" aria-label="サウンド切替">🔊</button>
+      <button class="icon-btn" id="infoBtn" aria-label="ヘルプ">ⓘ</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <section class="panel hero">
+      <div class="panel-inner">
+        <div class="status-row">
+          <div>
+            <div class="status-title">Fortune Status</div>
+            <div class="status-main"><span class="dot"></span><span id="statusText">「占う」を押すと、海の底から6枚のカードが召喚されます</span></div>
+          </div>
+          <div class="rates">
+            <b>排出率</b>
+            R 78% / SR 18% / SSR 3%<br>UR 0.9% / LR 0.1%
+          </div>
+        </div>
+
+        <div class="arena">
+          <div class="summon-altar" id="altar">
+            <div class="altar-core">
+              <div class="altar-ring"></div>
+              <div class="altar-ring2"></div>
+              <div class="altar-ring3"></div>
+              <div class="altar-text">
+                <b>FORTUNE CAST</b>
+                <span>占うを押すと配札演出が始まります。<br>目についた1枚を選んでください。</span>
+              </div>
+            </div>
+          </div>
+          <div class="deck" id="deck"></div>
+        </div>
+
+        <div class="controls">
+          <button class="main-btn" id="drawBtn">占う</button>
+          <button class="sub-btn" id="revealBtn" disabled>残りの運命を見る</button>
+          <button class="sub-btn" id="resetBtn">最初に戻る</button>
+        </div>
+        <div class="helper" id="helperText">LRでは専用シネマ演出。動画ファイルがあれば泳いでくるムービーも再生できます。</div>
+      </div>
+    </section>
+
+    <div class="side-stack">
+      <section class="panel">
+        <div class="panel-inner">
+          <div class="result-head">
+            <div>
+              <h2 class="panel-title">釣運鑑定 / Fish Data</h2>
+              <div class="live-badge"><i></i>BGM ACTIVE</div>
+            </div>
+          </div>
+          <div id="resultArea" class="result-empty">まだ結果はありません。カードを1枚選ぶと、魚の画像・釣り方・おすすめルアー・狙い方・釣運コメントを表示します。</div>
+        </div>
+      </section>
+
+      <section class="side-card">
+        <div class="panel-inner">
+          <h2 class="panel-title">最近の結果</h2>
+          <div class="history" id="historyArea"><div class="result-empty">まだ履歴はありません。</div></div>
+        </div>
+      </section>
+
+      <section class="side-card">
+        <div class="panel-inner">
+          <h2 class="panel-title">アセット運用メモ</h2>
+          <div class="legend">
+            実写魚画像は <b>assets/fish/魚名.jpg</b><br>
+            LR動画は <b>assets/video/魚名.mp4</b><br>
+            という名前で GitHub に置くと自動読み込みします。
+            <small>例：assets/fish/ブリ.jpg / assets/video/巨大クロマグロ.mp4</small>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<dialog class="modal" id="infoDialog">
+  <div class="modal-head"><h3>使い方と拡張</h3><button class="close" id="closeInfo">×</button></div>
+  <div class="modal-body">
+    <b>できること</b><br>
+    ・超ド派手な配札演出 / 昇格演出 / 確定演出<br>
+    ・LR専用シネマ演出<br>
+    ・魚ごとの情報表示（釣り方 / おすすめルアー / 狙い目など）<br><br>
+    <b>LRの泳いでくる動画について</b><br>
+    できます。GitHub Pages のリポジトリ内に <b>assets/video/魚名.mp4</b> を置くと、その魚が当たった時だけ自動再生されます。動画が無い場合は、このHTML内のシネマ風アニメーションが代わりに再生されます。<br><br>
+    <b>リアルな魚画像について</b><br>
+    こちらも <b>assets/fish/魚名.jpg</b> を置けば表示できます。画像が無い場合は海中イメージのフォールバックを表示します。
+  </div>
+</dialog>
+
+<script>
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s);
+const deckEl=$('#deck');
+const altar=$('#altar');
+const drawBtn=$('#drawBtn');
+const resetBtn=$('#resetBtn');
+const revealBtn=$('#revealBtn');
+const statusText=$('#statusText');
+const helperText=$('#helperText');
+const resultArea=$('#resultArea');
+const historyArea=$('#historyArea');
+const overlay=$('#overlay');
+const omen=$('#omen');
+const flash=$('#flash');
+const infoDialog=$('#infoDialog');
+const soundBtn=$('#soundBtn');
+const lrCinematic=$('#lrCinematic');
+const lrVideo=$('#lrVideo');
+const lrFallback=$('#lrFallback');
+const lrFish=$('#lrFish');
+const lrCaption=$('#lrCaption');
+const fxCanvas=$('#fx');
+const fxCtx=fxCanvas.getContext('2d');
+
+const RATES=[{rarity:'R',weight:78},{rarity:'SR',weight:18},{rarity:'SSR',weight:3},{rarity:'UR',weight:.9},{rarity:'LR',weight:.1}];
+const FISH={
+R:['マアジ','マサバ','イワシ','サッパ','コノシロ','カサゴ','メバル','ハゼ','シロギス','ベラ','ネンブツダイ','ウミタナゴ','クサフグ','ヒイラギ','アイゴ','カマス','メジナ','クロダイ','ニジマス','ヤマメ','イワナ','オイカワ','ウグイ','カワムツ','ブルーギル','ブラックバス','ナマズ','フナ','コイ','ワカサギ','ドンコ','ホッケ','イシモチ','ボラ','タカベ','ソイ'],
+SR:['ヒラメ','マゴチ','シーバス','サワラ','イナダ','ワラサ','カンパチ','マダイ','チダイ','アマダイ','イトヨリダイ','ホウボウ','オオモンハタ','キジハタ','アカハタ','マハタ','シマアジ','カツオ','ソウダガツオ','タチウオ','アオハタ','イトウ','サクラマス','サツキマス','ヒメマス','レイクトラウト','スモールマウスバス','アメマス','シイラ','ハガツオ','コショウダイ','ニベ','ハマフエフキ','イサキ','カワハギ','ウマヅラハギ'],
+SSR:['ブリ','ヒラマサ','クエ','アカメ','オオニベ','石鯛','イシガキダイ','ロウニンアジ','カスミアジ','キハダマグロ','ビンナガマグロ','クロマグロ（幼魚）','バショウカジキ','スジアラ','コブダイ','アラ','オナガダイ','チカメキントキ','大型イトウ','キングサーモン','スチールヘッド','ピーコックバス','アリゲーターガー','ゴールデンドラード','バラマンディ','ターポン','レッドテールキャットフィッシュ','マーレーコッド'],
+UR:['クロマグロ','ミナミマグロ','メバチマグロ','カジキマグロ','クロカジキ','シロカジキ','マカジキ','メカジキ','大型ロウニンアジ','大型クエ','タマカイ','大型ヒラマサ','大型カンパチ','ドッグトゥースツナ','ナイルパーチ','ゴライアスタイガーフィッシュ','アラパイマ','ピライーバ','ベルーガチョウザメ','シベリアチョウザメ','レイクスタージョン','ジャイアントスネークヘッド','ゴールデンマシール','ムベンガ','巨大ターポン','巨大バラマンディ'],
+LR:['ブラックマーリン','ブルーマーリン','巨大メカジキ','巨大クロマグロ','巨大ミナミマグロ','巨大ロウニンアジ','巨大タマカイ','巨大クエ','巨大ドッグトゥースツナ','巨大ナイルパーチ','巨大ゴライアスタイガーフィッシュ','巨大アラパイマ','巨大ピライーバ','巨大アリゲーターガー','巨大ベルーガチョウザメ','メコンオオナマズ','ヨーロッパオオナマズ','ジャイアントフレッシュウォータースティングレイ','巨大イトウ','巨大キングサーモン','巨大ゴールデンマシール','巨大ピーコックバス','巨大マーレーコッド','巨大ターポン','巨大バラマンディ','巨大ヒラマサ','巨大カンパチ','巨大クロカジキ','巨大シロカジキ','巨大バショウカジキ']
+};
+const OMENS={
+R:['足元のレンジを丁寧に刻むほど答えが近づく日。基本の一投が釣果につながります。','小さな違和感を信じるほど吉。潮の変化や群れの回遊を見逃さないでください。','派手さより手返し重視。再現性の高い釣りが、今日の運気を押し上げます。'],
+SR:['流れが変わる瞬間を掴めそうです。移動の決断が良型への近道になります。','いつもより一段強い仕掛けが好機を連れてきます。迷ったら攻める側へ。','ベイトの気配に素直に従うと、思った以上のサイズが顔を出しそうです。'],
+SSR:['大きなアタリが近づいています。最初の違和感を信じ、合わせを迷わないで。','勝負どころは一度だけ。ドラグと結束を整えて、その瞬間を取りこぼさないで。','周囲が静かな時ほど水中は動いています。最後の一投に物語が待っています。'],
+UR:['記録更新の気配。準備不足だけが最大の敵です。タモ、ドラグ、ノットを再確認。','普段なら投げない場所へ、覚悟の一投を。非常識な一手が大物を呼び込みます。','ポイント、時間、ルアーを大胆に変えるほど吉。常識外の一匹と縁がある日です。'],
+LR:['伝説級の釣運が覚醒中。人生で語り継ぐ一匹に出会う可能性があります。','海と川の運命線が重なる日。理屈を超えた「ここだ」を信じてください。','逃した魚すら次の奇跡への伏線。今日は釣り人としての直感が最高潮です。']
+};
+const SPECIFIC={
+'ブリ':{category:'青物',season:'秋〜冬',spots:'堤防・沖堤・オフショア',method:'ナブラ撃ちや潮目を回遊待ち。速めのただ巻きやワンピッチが有効。',lure:'40〜80gメタルジグ / 大型ミノー',bait:'イワシ・小サバなどのベイト付き',point:'朝夕まずめ、潮が効く時間帯に回遊コースを狙う'},
+'ヒラメ':{category:'フラットフィッシュ',season:'秋〜冬・春',spots:'サーフ・河口・堤防周辺',method:'ボトムを意識してリフト&フォール。砂地のかけ上がりを丁寧に探る。',lure:'ジグヘッドワーム / ミノー / メタルジグ',bait:'小魚・イワシ・キス',point:'ベイトが寄る波打ち際や離岸流まわりが好機'},
+'シーバス':{category:'回遊魚',season:'通年',spots:'河口・港湾・明暗・橋脚',method:'流れに乗せてルアーを通し、明暗やヨレをドリフト気味に攻める。',lure:'ミノー / シンキングペンシル / バイブレーション',bait:'イワシ・ボラ稚魚・ハク',point:'夜の明暗部、潮位変化の大きい時間が有利'},
+'マダイ':{category:'鯛',season:'春・秋',spots:'沖の瀬・堤防先端・船',method:'底取りを丁寧にし、等速巻きや食いの間を意識する。',lure:'タイラバ / ジグ / テンヤ',bait:'甲殻類・小魚・イソメ',point:'潮通しが良い場所、満潮前後がチャンス'},
+'クロマグロ':{category:'マグロ',season:'夏〜秋',spots:'外洋・沖合',method:'回遊待ちとベイトの読みが重要。強いタックルで一気に主導権を握る。',lure:'大型トップ / ダイビングペンシル / メタルジグ',bait:'イワシ・トビウオ',point:'鳥山・潮目・ナブラを最優先に狙う'},
+'巨大クロマグロ':{category:'レジェンドマグロ',season:'夏〜秋',spots:'外洋',method:'大型ベイトに合わせたトップゲーム。ヒット後は無理せずドラグを使い切る。',lure:'大型ダイビングペンシル / 大型ポッパー',bait:'イワシ・サンマ・トビウオ',point:'船の立て方とファイト時間の管理が重要'},
+'クエ':{category:'ハタ系大型魚',season:'夏〜秋',spots:'磯・沖磯・深場',method:'根回りをタイトに攻め、掛けたら一気に浮かせる。',lure:'大型ジグ / 泳がせ',bait:'活きアジ・小魚',point:'根ズレ対策が最優先'},
+'アラパイマ':{category:'巨大淡水魚',season:'高水温期',spots:'大型河川・湖',method:'表層の反応や捕食タイミングを見て、アピールの強いルアーを通す。',lure:'大型スイムベイト / トップ',bait:'小魚',point:'朝夕の活性上昇時を狙う'},
+'ブラックバス':{category:'淡水魚',season:'春〜秋',spots:'野池・湖・リザーバー',method:'カバー打ち、ボトム、表層などその日の水温とベイトで使い分け。',lure:'ワーム / クランク / トップ',bait:'甲殻類・小魚',point:'ストラクチャー周りを丁寧に'},
+'ニジマス':{category:'トラウト',season:'秋〜春',spots:'管理釣り場・渓流・湖',method:'レンジを刻みつつ一定速度で引く。食わせの間を作るのも有効。',lure:'スプーン / ミノー / クランク',bait:'昆虫・小魚',point:'朝の活性が高い時間に手返し重視'},
+'カツオ':{category:'青物',season:'夏〜秋',spots:'沖合・潮目',method:'高速ただ巻きや早めのジャーク。群れに当て続けることが大切。',lure:'メタルジグ / 小型トップ',bait:'小魚',point:'鳥山・ナブラ直撃が基本'},
+'タチウオ':{category:'回遊魚',season:'夏〜冬',spots:'堤防・船・湾奥',method:'フォールで食わせる。細かいシャクリとテンポの変化が効く。',lure:'ワインド / メタルジグ / テンヤ',bait:'キビナゴ・イワシ',point:'夜やまずめ、群れが入ったタイミングが勝負'},
+'シマアジ':{category:'回遊魚',season:'夏〜秋',spots:'沖・磯・堤防',method:'速い流れに合わせた自然な漂わせ方が重要。',lure:'メタルジグ / カゴ / 泳がせ',bait:'オキアミ・小魚',point:'潮が走る時間に集中する'},
+'ヒラマサ':{category:'大型青物',season:'春・秋',spots:'磯・沖磯・オフショア',method:'トップへの反応が出やすい。掛けたら根に入られる前に主導権を取る。',lure:'ダイビングペンシル / 大型ジグ',bait:'小魚',point:'潮目と瀬周りの複合地形が有望'}
+};
+const CATEGORY_RULES=[
+{match:n=>/マグロ|カジキ|マーリン|ドッグトゥースツナ/.test(n),data:{category:'大型回遊魚',season:'夏〜秋',spots:'外洋・沖合・潮目',method:'ベイト反応と潮目を読み、大型プラグやジグで広範囲を探る。ヒット後はドラグ管理が非常に重要。',lure:'大型トップ / ダイビングペンシル / メタルジグ',bait:'イワシ・トビウオ',point:'鳥山・ナブラ・潮目の重なる場所が最有力'}},
+{match:n=>/ヒラメ|マゴチ/.test(n),data:{category:'フラットフィッシュ',season:'春・秋〜冬',spots:'サーフ・河口・湾内砂地',method:'ボトム付近を中心にリフト&フォール。かけ上がりや離岸流を丁寧に攻める。',lure:'ジグヘッドワーム / ミノー / メタルジグ',bait:'小魚',point:'波の変化とベイトの位置を優先'}},
+{match:n=>/ハタ|クエ|アラ|スジアラ|タマカイ/.test(n),data:{category:'根魚大型',season:'夏〜秋',spots:'岩礁帯・沖磯・深場',method:'根周りをタイトに攻め、掛けたら一気に浮かせる。',lure:'メタルジグ / テキサスリグ / 泳がせ',bait:'小魚・甲殻類',point:'根ズレ対策と強いタックルが必要'}},
+{match:n=>/サーモン|マス|イトウ|トラウト|ヤマメ|イワナ|ニジマス|アメマス|ワカサギ/.test(n),data:{category:'トラウト系',season:'秋〜春',spots:'渓流・湖・管理釣り場',method:'レンジを刻み、反応速度に合わせてスプーンやミノーを使い分ける。',lure:'スプーン / ミノー / クランク',bait:'昆虫・小魚',point:'朝夕の低水温時間帯が有利'}},
+{match:n=>/ブラックバス|ブルーギル|ナマズ|コイ|フナ|オイカワ|カワムツ|ウグイ/.test(n),data:{category:'淡水魚',season:'春〜秋',spots:'河川・湖・池',method:'ストラクチャーや流れの変化を重点的に探る。',lure:'ワーム / スプーン / トップ',bait:'虫・小魚・甲殻類',point:'カバーや日陰、流れ込み周辺が狙い目'}},
+{match:n=>/ブリ|ヒラマサ|カンパチ|イナダ|ワラサ|シイラ|カツオ|サワラ/.test(n),data:{category:'青物',season:'夏〜秋',spots:'堤防・沖堤・オフショア',method:'回遊待ちと広範囲のサーチが重要。速めの巻きやジャークでリアクションを狙う。',lure:'メタルジグ / 大型ミノー / トップ',bait:'イワシ・小サバ',point:'朝夕まずめ、潮通しの良い回遊コース'}},
+{match:n=>/シーバス|クロダイ|メジナ|イシモチ|ボラ|メバル|カサゴ|ソイ|タチウオ/.test(n),data:{category:'身近な海の魚',season:'通年',spots:'堤防・港湾・河口',method:'流れ、明暗、障害物周りを丁寧に攻める。レンジコントロールが鍵。',lure:'ミノー / ワーム / バイブレーション / ジグヘッド',bait:'小魚・甲殻類',point:'夜やまずめ、潮変わりのタイミング'}},
+{match:n=>true,data:{category:'回遊・沿岸魚',season:'通年',spots:'堤防・磯・船',method:'ベイトや地形変化を意識して、まずは反応の出るレンジを探る。',lure:'メタルジグ / ミノー / ワーム',bait:'小魚・甲殻類',point:'潮が動く時間帯を最優先'}}
+];
+let state='idle';
+let cards=[];
+let chosen=false;
+let soundOn=true;
+let audioCtx=null;
+let particles=[];
+let bgmTimers=[];
+let bgmStarted=false;
+let history=[];
+
+function safeLSGet(key, def){ try{ const v=localStorage.getItem(key); return v?JSON.parse(v):def; }catch(e){ return def; } }
+function safeLSSet(key,val){ try{ localStorage.setItem(key,JSON.stringify(val)); }catch(e){} }
+function rand(arr){return arr[Math.floor(Math.random()*arr.length)]}
+function delay(ms){return new Promise(r=>setTimeout(r,ms))}
+function rarityRoll(){ let n=Math.random()*100; for(const item of RATES){ if(n<item.weight) return item.rarity; n-=item.weight; } return 'LR'; }
+function fishIcon(r){ return r==='LR'?'🐉':r==='UR'?'🦈':r==='SSR'?'🐠':r==='SR'?'🐟':'🐡'; }
+function resize(){ fxCanvas.width=innerWidth*devicePixelRatio; fxCanvas.height=innerHeight*devicePixelRatio; fxCtx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0); }
+addEventListener('resize',resize); resize();
+
+function spawnParticles(count, colors, origin={x:innerWidth/2,y:innerHeight*.42}, spread=120, power=13){
+  for(let i=0;i<count;i++){
+    particles.push({x:origin.x+(Math.random()-.5)*spread,y:origin.y+(Math.random()-.5)*spread*.3,vx:(Math.random()-.5)*power,vy:-Math.random()*power-1,g:.14+Math.random()*.12,size:2+Math.random()*6,life:55+Math.random()*70,color:rand(colors),shape:Math.random()>.5?'circle':'rect'});
+  }
+}
+function animate(){
+  fxCtx.clearRect(0,0,innerWidth,innerHeight);
+  particles=particles.filter(p=>p.life>0);
+  for(const p of particles){
+    p.x+=p.vx; p.y+=p.vy; p.vy+=p.g; p.vx*=.992; p.life--;
+    fxCtx.globalAlpha=Math.min(1,p.life/28); fxCtx.fillStyle=p.color;
+    if(p.shape==='circle'){ fxCtx.beginPath(); fxCtx.arc(p.x,p.y,p.size,0,Math.PI*2); fxCtx.fill(); }
+    else { fxCtx.fillRect(p.x,p.y,p.size*1.8,p.size*.6); }
+  }
+  fxCtx.globalAlpha=1; requestAnimationFrame(animate);
+}
+animate();
+
+function initAudio(){ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==='suspended') audioCtx.resume(); }
+function tone(freq,duration,type='sine',vol=.05){ if(!soundOn) return; initAudio(); const o=audioCtx.createOscillator(),g=audioCtx.createGain(); o.type=type; o.frequency.value=freq; g.gain.setValueAtTime(vol,audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+duration); o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+duration); }
+function sweep(from,to,duration,vol=.05,type='sawtooth'){ if(!soundOn) return; initAudio(); const o=audioCtx.createOscillator(),g=audioCtx.createGain(); o.type=type; o.frequency.setValueAtTime(from,audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(to,audioCtx.currentTime+duration); g.gain.setValueAtTime(vol,audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+duration); o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+duration); }
+function startBGM(){
+  if(bgmStarted || !soundOn) return; initAudio(); bgmStarted=true;
+  let step=0; const chords=[[174.61,261.63,349.23],[196,293.66,392],[220,329.63,440],[164.81,246.94,329.63]];
+  const pad=setInterval(()=>{ const c=chords[step%chords.length]; c.forEach((f,i)=>setTimeout(()=>tone(f,1.8,'sine',i?0.012:0.016),i*70)); tone(c[0]/2,1.5,'triangle',0.014); step++; },1800);
+  let bell=0; const notes=[523.25,659.25,783.99,698.46,587.33,880,783.99,659.25];
+  const sparkle=setInterval(()=>{ tone(notes[bell%notes.length],.24,'triangle',0.012); bell++; },460);
+  bgmTimers.push(pad,sparkle);
+}
+function stopBGM(){ bgmTimers.forEach(clearInterval); bgmTimers=[]; bgmStarted=false; }
+function dealSound(i){ tone(180+i*20,.07,'square',.026); setTimeout(()=>tone(120+i*10,.1,'triangle',.02),30); }
+function revealSeq(r){ const seq={R:[220,277],SR:[260,390,520],SSR:[330,495,660,990],UR:[260,520,780,1040,1320],LR:[110,220,440,880,1760]}[r]; seq.forEach((f,i)=>setTimeout(()=>tone(f,.35,r==='LR'?'sawtooth':'triangle',.05),i*100)); }
+
+function showOmen(text, color='#fff'){ omen.textContent=text; omen.style.color=color; overlay.classList.remove('active'); void overlay.offsetWidth; overlay.classList.add('active'); setTimeout(()=>overlay.classList.remove('active'),1320); }
+function doFlash(){ flash.classList.add('go'); setTimeout(()=>flash.classList.remove('go'),700); }
+
+function resetAll(){
+  stopBGM(); state='idle'; chosen=false; cards=[]; deckEl.innerHTML=''; deckEl.classList.remove('ready'); altar.classList.remove('hidden');
+  drawBtn.disabled=false; revealBtn.disabled=true; statusText.textContent='「占う」を押すと、海の底から6枚のカードが召喚されます';
+  helperText.textContent='LRでは専用シネマ演出。動画ファイルがあれば泳いでくるムービーも再生できます。';
+  resultArea.className='result-empty'; resultArea.innerHTML='まだ結果はありません。カードを1枚選ぶと、魚の画像・釣り方・おすすめルアー・狙い方・釣運コメントを表示します。';
+}
+
+function createCards(){
+  cards=Array.from({length:6},()=>{const rarity=rarityRoll(); return {rarity, fish:rand(FISH[rarity])};});
+  deckEl.innerHTML='';
+  cards.forEach((data,i)=>{
+    const card=document.createElement('button'); card.className='card'; card.setAttribute('aria-label',`${i+1}枚目のカード`);
+    card.innerHTML=`<div class="card-inner"><div class="face back"><div class="sigil">🐟</div><div class="card-num">CARD ${String(i+1).padStart(2,'0')}</div></div><div class="face front"><div class="rarity"></div><div class="fish-icon">🐟</div><div class="fish-name"></div><small>あなたが次に釣る運命魚</small></div></div>`;
+    card.addEventListener('click',()=>chooseCard(i,card));
+    deckEl.appendChild(card);
+  });
+}
+
+async function startDraw(){
+  if(state==='dealing') return;
+  if(state==='chosen' || state==='ready') resetAll();
+  initAudio(); if(soundOn) startBGM();
+  state='dealing'; chosen=false; drawBtn.disabled=true; revealBtn.disabled=true;
+  statusText.textContent='潮の渦が開き、運命のカードが呼び出されています…'; helperText.textContent='配札演出中…';
+  createCards(); altar.classList.add('hidden'); deckEl.classList.add('ready');
+  showOmen('FORTUNE START','#66efff'); sweep(120,500,.6,.055); spawnParticles(120,['#58efff','#9df5ff','#5f81ff']);
+  const list=[...deckEl.children];
+  for(let i=0;i<list.length;i++){ await delay(160); list[i].classList.add('dealt'); dealSound(i); spawnParticles(16,['#4fe7ff','#d0fbff'],{x:innerWidth/2,y:innerHeight*.38},60,7); }
+  await delay(380); drawBtn.disabled=false; state='ready'; statusText.textContent='6枚の中から、直感で1枚選んでください'; helperText.textContent='気になった1枚をタップ。高レアは確変・確定演出あり。';
+}
+
+function fillFront(card,data){ card.dataset.rarity=data.rarity; card.querySelector('.rarity').textContent=data.rarity; card.querySelector('.rarity').className=`rarity ${data.rarity}`; card.querySelector('.fish-name').textContent=data.fish; card.querySelector('.fish-icon').textContent=fishIcon(data.rarity); }
+
+async function chooseCard(index, card){
+  if(chosen || state!=='ready') return;
+  chosen=true; state='chosen';
+  const result=cards[index];
+  [...deckEl.children].forEach((el,i)=>{el.classList.add('locked'); if(i!==index) el.style.opacity='.38';});
+  drawBtn.disabled=true; revealBtn.disabled=true;
+  statusText.textContent='運命の糸が水中へ沈んでいく…'; helperText.textContent='アタリを待っています…';
+  tone(160,.16,'triangle',.08);
+  const fakeout=['SSR','UR','LR'].includes(result.rarity) && Math.random()<.6;
+  if(fakeout) await playFakeout(result.rarity); else await playRaritySequence(result.rarity);
+  if(result.rarity==='LR') await playLRCinematic(result);
+  fillFront(card,result); card.style.opacity='1'; card.classList.add('revealed'); revealSeq(result.rarity); burstByRarity(result.rarity);
+  await delay(800); renderResult(result); saveHistory(result); statusText.textContent=`${result.rarity}「${result.fish}」を引き当てました`; helperText.textContent=result.rarity==='LR'?'伝説は、次の一投から始まる。':'この魚との出会いを引き寄せる一投を。';
+  drawBtn.disabled=false; revealBtn.disabled=false;
+}
+
+async function playFakeout(finalRarity){
+  showOmen('……反応なし？','#c4d3e0'); tone(110,.16,'sine'); await delay(830);
+  document.body.classList.add('shake'); await delay(420); document.body.classList.remove('shake');
+  showOmen('確 変','#ff60e0'); doFlash(); sweep(170,950,.8,.07); spawnParticles(130,['#ff55dd','#43f7ff','#ffe66b']); await delay(880);
+  await playRaritySequence(finalRarity,true);
+}
+async function playRaritySequence(rarity, upgraded=false){
+  if(rarity==='R'){ showOmen('小さなアタリ','#dae7f3'); tone(190,.22,'triangle'); await delay(720); }
+  if(rarity==='SR'){ showOmen(upgraded?'昇格・青潮':'青潮発生','#66efff'); sweep(180,430,.52); spawnParticles(60,['#48dfff','#baf9ff']); await delay(880); }
+  if(rarity==='SSR'){ showOmen(upgraded?'昇格・黄金':'黄金のアタリ','#ffe369'); document.body.classList.add('shake'); sweep(160,700,.72,.06); spawnParticles(100,['#ffd84e','#fff4aa']); await delay(640); document.body.classList.remove('shake'); await delay(280); }
+  if(rarity==='UR'){ showOmen(upgraded?'超昇格・虹潮':'虹色海面','#ffffff'); document.body.classList.add('shock'); sweep(120,1180,1.05,.065); spawnParticles(180,['#ff4dc4','#50e8ff','#fff56c','#a875ff']); await delay(960); document.body.classList.remove('shock'); }
+  if(rarity==='LR'){ showOmen('L E G E N D','#fff0a3'); doFlash(); sweep(70,1450,1.35,.08); spawnParticles(260,['#ff3d00','#ffdf45','#ffffff','#6c00ff']); await delay(1400); showOmen('L R 確 定','#fff3a6'); await delay(960); }
+}
+async function playLRCinematic(result){
+  lrCaption.textContent=result.fish; lrFish.textContent=fishIcon('LR'); lrCinematic.classList.add('show');
+  const videoPath=`assets/video/${encodeURIComponent(result.fish)}.mp4`;
+  let usingVideo=false;
+  try{
+    lrVideo.pause(); lrVideo.removeAttribute('src'); lrVideo.load();
+    lrVideo.src=videoPath;
+    const canPlay = await new Promise(resolve=>{
+      let done=false;
+      const ok=()=>{ if(done) return; done=true; cleanup(); resolve(true); };
+      const ng=()=>{ if(done) return; done=true; cleanup(); resolve(false); };
+      const cleanup=()=>{ lrVideo.removeEventListener('loadeddata',ok); lrVideo.removeEventListener('error',ng); };
+      lrVideo.addEventListener('loadeddata',ok,{once:true}); lrVideo.addEventListener('error',ng,{once:true});
+      setTimeout(ng,900);
+    });
+    if(canPlay){ usingVideo=true; lrFallback.style.display='none'; lrVideo.style.display='block'; try{ await lrVideo.play(); }catch(e){} }
+  }catch(e){}
+  if(!usingVideo){ lrVideo.style.display='none'; lrFallback.style.display='block'; }
+  await delay(usingVideo?3800:4300);
+  if(usingVideo){ try{ lrVideo.pause(); }catch(e){} }
+  lrCinematic.classList.remove('show'); lrFallback.style.display='block'; lrVideo.style.display='none';
+}
+function burstByRarity(r){ const n={R:30,SR:60,SSR:110,UR:180,LR:280}[r]; const c={R:['#dbe7f4'],SR:['#44e8ff','#cdfbff'],SSR:['#ffd349','#fff2a6'],UR:['#ff45d4','#45e8ff','#fff05f','#9f67ff'],LR:['#ff3600','#ffd93d','#ffffff','#7400ff']}[r]; spawnParticles(n,c); }
+
+function fishData(name, rarity){
+  if(SPECIFIC[name]) return SPECIFIC[name];
+  const base = CATEGORY_RULES.find(rule=>rule.match(name)).data;
+  return {...base};
+}
+function imagePath(name){ return `assets/fish/${encodeURIComponent(name)}.jpg`; }
+function omenTextFor(rarity){ return rand(OMENS[rarity]); }
+function luckScore(rarity){ const range={R:[48,69],SR:[65,82],SSR:[79,91],UR:[90,98],LR:[99,100]}[rarity]; return Math.floor(Math.random()*(range[1]-range[0]+1))+range[0]; }
+function lureSuggest(meta){ return meta.lure || 'メタルジグ / ミノー / ワーム'; }
+function tipText(meta){ return meta.point || '潮が動くタイミングを優先し、まずはベイトの有無を確認。'; }
+
+function renderResult(result){
+  const meta=fishData(result.fish,result.rarity);
+  const fortune=omenTextFor(result.rarity);
+  const imgPath=imagePath(result.fish);
+  const assetNote=`実写画像を表示したい場合は GitHub に ${imgPath} を追加してください。LR動画は assets/video/${result.fish}.mp4 です。`;
+  resultArea.className='';
+  resultArea.innerHTML=`
+    <div class="result-card">
+      <div class="media-box">
+        <div class="media-hero" id="mediaHero">
+          <img id="fishImage" alt="${result.fish}の画像" src="${imgPath}" style="display:none;">
+          <div class="media-fallback" id="mediaFallback">
+            <div class="ocean"></div>
+            <div class="fish-silhouette">${fishIcon(result.rarity)}</div>
+          </div>
+        </div>
+        <div class="media-meta">
+          <div class="rarity-line ${result.rarity}">${result.rarity} / NEXT TARGET</div>
+          <div class="name-line">${result.fish}</div>
+          <div class="asset-note">${assetNote}</div>
+        </div>
+      </div>
+      <div>
+        <div class="info-grid">
+          <div class="info-box"><b>カテゴリー</b><span>${meta.category}</span></div>
+          <div class="info-box"><b>狙いやすい時期</b><span>${meta.season}</span></div>
+          <div class="info-box"><b>主なポイント</b><span>${meta.spots}</span></div>
+          <div class="info-box"><b>おすすめルアー</b><span>${lureSuggest(meta)}</span></div>
+          <div class="info-box"><b>釣り方</b><span>${meta.method}</span></div>
+          <div class="info-box"><b>ベイト / エサ傾向</b><span>${meta.bait}</span></div>
+        </div>
+        <div class="fortune-block">${fortune}</div>
+        <div class="tips">
+          <div class="tip"><b>釣運</b><span>${luckScore(result.rarity)} / 100</span></div>
+          <div class="tip"><b>狙い目</b><span>${tipText(meta)}</span></div>
+          <div class="tip"><b>ワンポイント</b><span>ヒット後は${result.rarity==='R'?'丁寧なやり取り':'主導権を渡さないファイト'}を意識。</span></div>
+        </div>
+      </div>
+    </div>`;
+  const img = $('#fishImage'); const fallback = $('#mediaFallback');
+  img.addEventListener('load',()=>{ img.style.display='block'; fallback.style.display='none'; },{once:true});
+  img.addEventListener('error',()=>{ img.style.display='none'; fallback.style.display='grid'; },{once:true});
+}
+
+function saveHistory(result){
+  history=safeLSGet('fishFortuneHistory',[]); history.unshift({...result,time:new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}); history.splice(10); safeLSSet('fishFortuneHistory',history); renderHistory();
+}
+function renderHistory(){
+  history=safeLSGet('fishFortuneHistory',[]);
+  if(!history.length){ historyArea.innerHTML='<div class="result-empty">まだ履歴はありません。</div>'; return; }
+  historyArea.innerHTML=history.map(item=>`<div class="history-item"><span><b class="${item.rarity}">${item.rarity}</b> ${item.fish}</span><time>${item.time}</time></div>`).join('');
+}
+function revealRest(){
+  if(!cards.length) return; revealBtn.disabled=true; [...deckEl.children].forEach((card,i)=>{ if(!card.classList.contains('revealed')){ fillFront(card,cards[i]); setTimeout(()=>{ card.style.opacity='.72'; card.classList.add('revealed'); },i*110); } }); helperText.textContent='選ばなかった5枚の運命も公開しました。'; sweep(260,880,.48,.05);
+}
+
+drawBtn.addEventListener('click',startDraw);
+resetBtn.addEventListener('click',resetAll);
+revealBtn.addEventListener('click',revealRest);
+soundBtn.addEventListener('click',()=>{ soundOn=!soundOn; soundBtn.textContent=soundOn?'🔊':'🔇'; if(soundOn){ startBGM(); tone(520,.15,'triangle'); } else stopBGM(); });
+$('#infoBtn').addEventListener('click',()=>infoDialog.showModal()); $('#closeInfo').addEventListener('click',()=>infoDialog.close()); infoDialog.addEventListener('click',e=>{ if(e.target===infoDialog) infoDialog.close(); });
+renderHistory(); resetAll();
+})();
+</script>
+</body>
+</html>
