@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#050816" />
+<title>次あなたが釣る魚占い</title>
+<style>
+  :root{
+    --bg:#050816;
+    --panel:rgba(8,16,38,.76);
+    --line:rgba(255,255,255,.14);
+    --text:#f7fbff;
+    --muted:#aab9ce;
+    --cyan:#66f7ff;
+    --gold:#ffd15c;
+    --danger:#ff4d87;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:#030611;color:var(--text);font-family:Inter,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;overflow-x:hidden}
+  body{min-height:100vh;background:
+    radial-gradient(circle at 50% -10%,rgba(0,212,255,.22),transparent 34%),
+    radial-gradient(circle at 85% 20%,rgba(116,74,255,.16),transparent 28%),
+    linear-gradient(180deg,#08152a 0%,#050816 45%,#02030a 100%)}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:34px 34px;mask-image:linear-gradient(#000,transparent 88%)}
+  #fxCanvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:40}
+  .aurora{position:fixed;inset:-25%;pointer-events:none;filter:blur(55px);opacity:.36;z-index:0;background:conic-gradient(from 180deg,transparent,#00eaff55,transparent,#8a55ff55,transparent);animation:spin 20s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .app{position:relative;z-index:1;width:min(1120px,100%);margin:auto;padding:18px 14px 46px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+  .brand{display:flex;align-items:center;gap:11px}
+  .logo{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;font-size:25px;background:linear-gradient(145deg,#0c274a,#08111f);border:1px solid #67edff55;box-shadow:0 0 24px #00d9ff33,inset 0 0 20px #00d9ff18}
+  h1{font-size:clamp(20px,4vw,34px);margin:0;letter-spacing:.06em;text-shadow:0 0 22px #4be9ff55}
+  .subtitle{margin:4px 0 0;color:var(--muted);font-size:12px;letter-spacing:.08em}
+  .header-actions{display:flex;gap:8px}
+  button{font:inherit;color:inherit}
+  .icon-btn,.main-btn,.mini-btn{border:1px solid var(--line);background:rgba(8,18,38,.72);backdrop-filter:blur(12px);cursor:pointer;transition:.2s ease}
+  .icon-btn{width:42px;height:42px;border-radius:13px;font-size:18px}
+  .icon-btn:hover,.mini-btn:hover{border-color:#73f3ff88;transform:translateY(-1px)}
+  .hero{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:26px;padding:17px;background:linear-gradient(145deg,rgba(15,35,69,.82),rgba(4,9,24,.9));box-shadow:0 28px 75px #0008,inset 0 1px rgba(255,255,255,.08)}
+  .hero::after{content:"";position:absolute;inset:auto -20% -65% -20%;height:80%;background:radial-gradient(ellipse,#0076b855,transparent 68%);animation:tide 5s ease-in-out infinite}
+  @keyframes tide{50%{transform:translateY(-12px) scaleX(1.06)}}
+  .status-row{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+  .status{color:#c7d8e9;font-size:13px;display:flex;align-items:center;gap:8px}
+  .status-dot{width:9px;height:9px;border-radius:99px;background:#62f5ff;box-shadow:0 0 14px #62f5ff;animation:pulse 1.5s infinite}
+  @keyframes pulse{50%{opacity:.4;transform:scale(.72)}}
+  .rates{font-size:11px;color:#91a9c2;text-align:right}
+  .deck-wrap{position:relative;z-index:3;min-height:430px;display:flex;align-items:center;justify-content:center}
+  .altar{position:absolute;inset:0;display:grid;place-items:center;text-align:center;pointer-events:none;transition:.45s ease}
+  .altar.hidden{opacity:0;transform:scale(.92)}
+  .altar-core{width:min(72vw,420px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;position:relative;background:
+    radial-gradient(circle at 50% 50%,rgba(255,255,255,.07),transparent 46%),
+    radial-gradient(circle at 50% 50%,rgba(0,234,255,.12),transparent 62%);
+    border:1px solid rgba(255,255,255,.14);box-shadow:0 0 60px rgba(0,225,255,.12),inset 0 0 60px rgba(0,203,255,.12);
+    animation:altarPulse 4s ease-in-out infinite}
+  .altar-core::before,.altar-core::after{content:"";position:absolute;border-radius:50%;inset:12%;border:1px solid rgba(115,243,255,.35)}
+  .altar-core::after{inset:25%;border-style:dashed;animation:spin 18s linear infinite reverse;opacity:.6}
+  .altar-text{padding:18px 22px;max-width:80%}
+  .altar-text b{display:block;font-size:clamp(24px,5vw,42px);letter-spacing:.14em;text-shadow:0 0 24px #52eeff99}
+  .altar-text span{display:block;margin-top:8px;font-size:13px;color:#9ec0dd;line-height:1.8}
+  @keyframes altarPulse{50%{transform:scale(1.025)}}
+  .deck{position:relative;z-index:3;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;perspective:1400px;width:100%;opacity:0;transform:translateY(8px);transition:.35s ease}
+  .deck.ready{opacity:1;transform:none}
+  .deck.empty{pointer-events:none}
+  .card{position:relative;aspect-ratio:2/3;min-height:190px;border:0;background:none;padding:0;cursor:pointer;perspective:1200px;transform-style:preserve-3d;opacity:0;transform:translateY(-110px) rotateX(28deg) scale(.72)}
+  .card.dealt{animation:deal .82s both cubic-bezier(.2,.85,.2,1);opacity:1}
+  @keyframes deal{0%{opacity:0;transform:translateY(-140px) rotateX(34deg) rotate(-10deg) scale(.58)}60%{opacity:1;transform:translateY(12px) rotateX(-3deg) rotate(1.2deg) scale(1.02)}100%{opacity:1;transform:none}}
+  .card:hover:not(.locked):not(.revealed){transform:translateY(-8px) scale(1.015);opacity:1}
+  .card.locked{cursor:default}
+  .card-inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform 1s cubic-bezier(.15,.75,.15,1)}
+  .card.revealed .card-inner{transform:rotateY(180deg)}
+  .face{position:absolute;inset:0;border-radius:19px;backface-visibility:hidden;overflow:hidden;border:1px solid rgba(255,255,255,.18);box-shadow:0 16px 35px #0008}
+  .back{display:grid;place-items:center;background:
+    linear-gradient(145deg,rgba(55,214,255,.15),transparent 35%),
+    repeating-linear-gradient(45deg,transparent 0 10px,rgba(255,255,255,.025) 10px 11px),
+    radial-gradient(circle at center,#10284d,#071020 68%)}
+  .back::before{content:"";position:absolute;inset:7px;border:1px solid #66ecff44;border-radius:15px;box-shadow:inset 0 0 28px #009dff22}
+  .back::after{content:"";position:absolute;width:145%;height:42%;background:linear-gradient(90deg,transparent,#fff3,transparent);transform:rotate(-38deg);animation:shine 2.4s infinite}
+  @keyframes shine{from{translate:-100% 0}to{translate:100% 0}}
+  .sigil{width:58%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;border:2px solid #76f4ff99;box-shadow:0 0 28px #00e5ff55,inset 0 0 25px #00c4ff33;font-size:clamp(34px,7vw,68px);text-shadow:0 0 18px #68f3ff;animation:float 2.7s ease-in-out infinite}
+  @keyframes float{50%{transform:translateY(-6px) rotate(2deg)}}
+  .card-num{position:absolute;bottom:13px;font-size:11px;letter-spacing:.24em;color:#9addeb}
+  .front{transform:rotateY(180deg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px;text-align:center;background:linear-gradient(145deg,#142033,#050912)}
+  .rarity{font-weight:1000;font-size:clamp(26px,7vw,54px);letter-spacing:.08em;line-height:1}
+  .fish-icon{font-size:clamp(38px,9vw,80px);filter:drop-shadow(0 10px 12px #0009);margin:8px 0}
+  .fish-name{font-size:clamp(14px,3.6vw,24px);font-weight:900;line-height:1.2}
+  .front small{margin-top:8px;color:#d7e7f5aa;font-size:10px}
+  .card[data-rarity="R"] .front{background:radial-gradient(circle at 50% 25%,#72859d66,transparent 42%),linear-gradient(145deg,#293545,#111720)}
+  .card[data-rarity="SR"] .front{background:radial-gradient(circle at 50% 25%,#2acbff88,transparent 43%),linear-gradient(145deg,#07567d,#071420)}
+  .card[data-rarity="SSR"] .front{background:radial-gradient(circle at 50% 20%,#ffe66caa,transparent 42%),linear-gradient(145deg,#725410,#1c1405)}
+  .card[data-rarity="UR"] .front{background:radial-gradient(circle at 50% 20%,#ff87f5aa,transparent 38%),conic-gradient(from 210deg,#2e0f69,#0b5c8e,#6d174e,#2e0f69)}
+  .card[data-rarity="LR"] .front{background:radial-gradient(circle at 50% 20%,#fff7a8cc,transparent 26%),conic-gradient(from 180deg,#050505,#6d4d00,#050505,#9a0000,#050505);box-shadow:inset 0 0 40px #ffd84c55}
+  .card[data-rarity="R"] .rarity{color:#d9e5f2}.card[data-rarity="SR"] .rarity{color:#6deeff;text-shadow:0 0 14px #00e5ff}.card[data-rarity="SSR"] .rarity{color:#ffe56c;text-shadow:0 0 18px #ffb300}.card[data-rarity="UR"] .rarity{color:white;text-shadow:0 0 8px #fff,0 0 20px #ff4fd8,0 0 34px #00d9ff}.card[data-rarity="LR"] .rarity{color:#fff6b0;text-shadow:0 0 8px #fff,0 0 18px #ffdf3d,0 0 36px #ff3b00}
+  .bottom{position:relative;z-index:3;margin-top:15px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
+  .main-btn{border-radius:999px;padding:13px 26px;font-weight:900;letter-spacing:.18em;background:linear-gradient(135deg,#006bd6,#00c4e8);box-shadow:0 0 25px #00d9ff44}
+  .main-btn:hover{filter:brightness(1.15);transform:translateY(-2px)}
+  .main-btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+  .mini-btn{border-radius:999px;padding:11px 16px;color:#c7d7e8}
+  .message{font-size:12px;color:#9fb3c8;text-align:center;margin-top:10px;min-height:18px}
+  .panels{display:grid;grid-template-columns:1.3fr .7fr;gap:14px;margin-top:14px}
+  .panel{border:1px solid var(--line);border-radius:21px;background:var(--panel);backdrop-filter:blur(14px);padding:15px;box-shadow:0 18px 40px #0005}
+  .panel h2{font-size:15px;margin:0 0 10px;letter-spacing:.08em}
+  .fortune-empty{color:#7f93aa;font-size:13px;line-height:1.8}
+  .result-grid{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center}
+  .result-badge{width:76px;height:76px;border-radius:22px;display:grid;place-items:center;font-size:40px;background:#0a1630;border:1px solid #ffffff22;box-shadow:inset 0 0 28px #00d9ff22}
+  .result-title{font-size:22px;font-weight:1000;margin-bottom:3px}
+  .result-meta{font-size:11px;color:#9db2c6}
+  .fortune-text{grid-column:1/-1;margin-top:5px;line-height:1.85;font-size:14px;color:#e5f1fa}
+  .luck-row{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:3px}
+  .luck-chip{border:1px solid #ffffff18;border-radius:13px;padding:9px;background:#ffffff08;text-align:center}
+  .luck-chip b{display:block;font-size:11px;color:#8da6bd;margin-bottom:4px}.luck-chip span{font-weight:900;font-size:12px}
+  .history{display:flex;flex-direction:column;gap:7px;max-height:256px;overflow:auto}
+  .history-item{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #ffffff0e;padding:7px 2px;font-size:12px}.history-item:last-child{border:0}.history-item .rank{font-weight:1000}.history-item time{color:#71879e;font-size:10px}
+  .R{color:#d4e0ec}.SR{color:#66e7ff}.SSR{color:#ffe068}.UR{color:#ff8ae9}.LR{color:#fff1a1;text-shadow:0 0 8px #ff8a00}
+  dialog{border:1px solid #ffffff24;border-radius:22px;background:#081020ee;color:#edf7ff;width:min(560px,92vw);box-shadow:0 35px 90px #000b;padding:0;backdrop-filter:blur(18px)}
+  dialog::backdrop{background:#01030bbb;backdrop-filter:blur(6px)}
+  .modal-head{padding:17px 18px;border-bottom:1px solid #ffffff15;display:flex;justify-content:space-between;align-items:center}.modal-head h3{margin:0}.close{border:0;background:none;color:white;font-size:24px;cursor:pointer}
+  .modal-body{padding:18px;line-height:1.75;font-size:13px;color:#c9d7e5}.rate-table{width:100%;border-collapse:collapse;margin:9px 0 13px}.rate-table td{padding:8px;border-bottom:1px solid #ffffff12}.rate-table td:last-child{text-align:right;font-weight:900}
+  .overlay{position:fixed;inset:0;z-index:30;display:none;place-items:center;text-align:center;pointer-events:none;background:radial-gradient(circle,transparent 12%,#000a 75%)}
+  .overlay.active{display:grid}
+  .omen{font-size:clamp(28px,8vw,82px);font-weight:1000;letter-spacing:.12em;opacity:0;transform:scale(.35);text-shadow:0 0 12px currentColor,0 0 36px currentColor}
+  .overlay.active .omen{animation:omen 1.25s both cubic-bezier(.15,.9,.2,1)}
+  @keyframes omen{20%{opacity:1;transform:scale(1.3) rotate(-2deg)}55%{opacity:1;transform:scale(.95)}100%{opacity:0;transform:scale(1.65)}}
+  .shock{animation:shock .5s linear}.shake{animation:shake .55s linear}
+  @keyframes shock{20%{filter:brightness(3)}40%{filter:invert(1)}100%{filter:none}}
+  @keyframes shake{0%,100%{transform:none}20%{transform:translate(-8px,4px) rotate(-.6deg)}40%{transform:translate(8px,-4px) rotate(.6deg)}60%{transform:translate(-5px,3px)}80%{transform:translate(5px,-2px)}}
+  .flash{position:fixed;inset:0;z-index:35;pointer-events:none;opacity:0;background:white}.flash.go{animation:flash .65s ease-out}@keyframes flash{0%{opacity:0}14%{opacity:1}100%{opacity:0}}
+  .lr-sigil{position:fixed;inset:0;z-index:34;pointer-events:none;display:none;place-items:center;background:radial-gradient(circle,#5a000066,#000 70%)}
+  .lr-sigil.go{display:grid;animation:lrFade 2.1s both}.lr-eye{font-size:min(34vw,220px);filter:drop-shadow(0 0 35px #ffb300);animation:eye 1.4s both}@keyframes eye{from{transform:scale(.05) rotate(-20deg);opacity:0}40%{transform:scale(1.2);opacity:1}to{transform:scale(2.1);opacity:0}}@keyframes lrFade{to{opacity:0}}
+  .bgm-indicator{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#90a8c3;margin-left:6px}
+  .bgm-indicator i{width:8px;height:8px;border-radius:50%;background:#56f4ff;display:inline-block;box-shadow:0 0 10px #56f4ff;animation:pulse 1.2s infinite}
+  @media(max-width:760px){.app{padding:10px 9px 36px}.brand .subtitle{display:none}.hero{padding:11px;border-radius:20px}.deck-wrap{min-height:340px}.deck{gap:7px}.face{border-radius:14px}.card{min-height:145px}.panels{grid-template-columns:1fr}.status-row{align-items:flex-start}.rates{max-width:150px}.luck-row{grid-template-columns:1fr}.result-grid{grid-template-columns:64px 1fr}.result-badge{width:64px;height:64px}.altar-core{width:min(86vw,320px)}}
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<canvas id="fxCanvas"></canvas>
+<div class="aurora"></div>
+<div class="flash" id="flash"></div>
+<div class="lr-sigil" id="lrSigil"><div class="lr-eye">👁️</div></div>
+<div class="overlay" id="overlay"><div class="omen" id="omenText"></div></div>
+
+<main class="app" id="app">
+  <header>
+    <div class="brand">
+      <div class="logo">🎣</div>
+      <div><h1>次あなたが釣る魚占い</h1><p class="subtitle">SIX CARDS · ONE DESTINY · CAST YOUR FATE</p></div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="soundBtn" aria-label="サウンド切替">🔊</button>
+      <button class="icon-btn" id="infoBtn" aria-label="確率情報">ⓘ</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="status-row">
+      <div class="status"><span class="status-dot"></span><span id="statusText">「占う」を押すと6枚のカードが配られます</span></div>
+      <div class="rates">R 78% / SR 18% / SSR 3%<br>UR 0.9% / LR 0.1%</div>
+    </div>
+    <div class="deck-wrap">
+      <div class="altar" id="altar">
+        <div class="altar-core">
+          <div class="altar-text">
+            <b>FORTUNE CAST</b>
+            <span>海の運命を呼び、6枚のカードを召喚します。<br>まずは「占う」をタップ。</span>
+          </div>
+        </div>
+      </div>
+      <div class="deck empty" id="deck" aria-label="6枚の占いカード"></div>
+    </div>
+    <div class="bottom">
+      <button class="main-btn" id="resetBtn">占う</button>
+      <button class="mini-btn" id="revealBtn" disabled>残りの運命を見る</button>
+    </div>
+    <div class="message" id="message">BGMと効果音つき。サウンドは右上からON/OFFできます。</div>
+  </section>
+
+  <section class="panels">
+    <article class="panel">
+      <h2>🔮 釣運鑑定 <span class="bgm-indicator"><i></i>BGM ACTIVE</span></h2>
+      <div id="fortune" class="fortune-empty">カードを配って1枚選ぶと、釣運・ラッキー仕掛け・狙い目の時間帯を鑑定します。</div>
+    </article>
+    <aside class="panel">
+      <h2>📜 最近の結果</h2>
+      <div class="history" id="history"><div class="fortune-empty">まだ履歴はありません。</div></div>
+    </aside>
+  </section>
+</main>
+
+<dialog id="infoDialog">
+  <div class="modal-head"><h3>排出確率と演出</h3><button class="close" id="closeInfo">×</button></div>
+  <div class="modal-body">
+    <table class="rate-table">
+      <tr><td class="R">R</td><td>78.0%</td></tr>
+      <tr><td class="SR">SR</td><td>18.0%</td></tr>
+      <tr><td class="SSR">SSR</td><td>3.0%</td></tr>
+      <tr><td class="UR">UR</td><td>0.9%</td></tr>
+      <tr><td class="LR">LR</td><td>0.1%</td></tr>
+    </table>
+    <b>抽選方法：</b>最初にレア度を確率抽選し、その後、そのレア度の魚種から1匹を均等抽選します。魚種数が多くてもLR確率は上がりません。<br><br>
+    <b>演出：</b>青潮＝SR以上、黄金のアタリ＝SSR以上、虹色海面＝UR以上、深海の眼＝LR確定。ときどき低レア演出から上位へ変わる「確変・逆転演出」が発生します。<br><br>
+    <b>サウンド：</b>占い開始でBGMが立ち上がり、配札音・昇格音・確定音・リザルト音が鳴ります。
+  </div>
+</dialog>
+
+<script>
+(() => {
+  'use strict';
+
+  const RATES = [
+    { rarity:'R', weight:78 },
+    { rarity:'SR', weight:18 },
+    { rarity:'SSR', weight:3 },
+    { rarity:'UR', weight:.9 },
+    { rarity:'LR', weight:.1 }
+  ];
+
+  const FISH = {
+    R:['マアジ','マサバ','イワシ','サッパ','コノシロ','カサゴ','メバル','ハゼ','シロギス','ベラ','ネンブツダイ','ウミタナゴ','クサフグ','ヒイラギ','アイゴ','カマス','メジナ','クロダイ','ニジマス','ヤマメ','イワナ','オイカワ','ウグイ','カワムツ','ブルーギル','ブラックバス','ナマズ','フナ','コイ','ワカサギ','ドンコ','ホッケ','イシモチ','ボラ','タカベ','ソイ'],
+    SR:['ヒラメ','マゴチ','シーバス','サワラ','イナダ','ワラサ','カンパチ','マダイ','チダイ','アマダイ','イトヨリダイ','ホウボウ','オオモンハタ','キジハタ','アカハタ','マハタ','シマアジ','カツオ','ソウダガツオ','タチウオ','アオハタ','イトウ','サクラマス','サツキマス','ヒメマス','レイクトラウト','スモールマウスバス','アメマス','シイラ','ハガツオ','コショウダイ','ニベ','ハマフエフキ','イサキ','カワハギ','ウマヅラハギ'],
+    SSR:['ブリ','ヒラマサ','クエ','アカメ','オオニベ','石鯛','イシガキダイ','ロウニンアジ','カスミアジ','キハダマグロ','ビンナガマグロ','クロマグロ（幼魚）','バショウカジキ','スジアラ','コブダイ','アラ','オナガダイ','チカメキントキ','大型イトウ','キングサーモン','スチールヘッド','ピーコックバス','アリゲーターガー','ゴールデンドラード','バラマンディ','ターポン','レッドテールキャットフィッシュ','マーレーコッド'],
+    UR:['クロマグロ','ミナミマグロ','メバチマグロ','カジキマグロ','クロカジキ','シロカジキ','マカジキ','メカジキ','大型ロウニンアジ','大型クエ','タマカイ','大型ヒラマサ','大型カンパチ','ドッグトゥースツナ','ナイルパーチ','ゴライアスタイガーフィッシュ','アラパイマ','ピライーバ','ベルーガチョウザメ','シベリアチョウザメ','レイクスタージョン','ジャイアントスネークヘッド','ゴールデンマシール','ムベンガ','巨大ターポン','巨大バラマンディ'],
+    LR:['ブラックマーリン','ブルーマーリン','巨大メカジキ','巨大クロマグロ','巨大ミナミマグロ','巨大ロウニンアジ','巨大タマカイ','巨大クエ','巨大ドッグトゥースツナ','巨大ナイルパーチ','巨大ゴライアスタイガーフィッシュ','巨大アラパイマ','巨大ピライーバ','巨大アリゲーターガー','巨大ベルーガチョウザメ','メコンオオナマズ','ヨーロッパオオナマズ','ジャイアントフレッシュウォータースティングレイ','巨大イトウ','巨大キングサーモン','巨大ゴールデンマシール','巨大ピーコックバス','巨大マーレーコッド','巨大ターポン','巨大バラマンディ','巨大ヒラマサ','巨大カンパチ','巨大クロカジキ','巨大シロカジキ','巨大バショウカジキ']
+  };
+
+  const OMENS = {
+    R:['足元を丁寧に探るほど答えが近づく日。小さな変化を見逃さないで。','派手さより再現性。基本を崩さない一投が次の釣果につながります。','魚のいる層を細かく刻むと運が開きます。焦らず手返しよく。'],
+    SR:['流れが変わる瞬間を掴めそうです。場所移動を恐れない判断が吉。','いつもより一段強い仕掛けが好機を連れてきます。迷ったら攻める側へ。','ベイトの気配に素直に従うと、予想外の良型が応えてくれそうです。'],
+    SSR:['大きなアタリが近づいています。最初の違和感を信じ、合わせを迷わないで。','今日の勝負どころは一度だけ。その瞬間のためにドラグと結束を整えて。','周囲が静かな時ほど水中は動いています。最後の一投に物語が待っています。'],
+    UR:['常識外の一匹と縁がある強運日。ポイント・時間・仕掛けを大胆に変えるほど吉。','潮目の向こう側に答えがあります。普段なら投げない場所へ、覚悟の一投を。','記録更新の気配。準備不足だけが最大の敵です。タモ、ドラグ、ノットを再確認。'],
+    LR:['伝説級の釣運が覚醒しています。逃した魚すら次の奇跡への伏線になります。','海と川の運命線が重なる日。人生で語り継ぐ一匹に出会う可能性があります。','釣り人としての直感が最高潮。理屈を超えた「ここだ」を信じてください。']
+  };
+  const LURES=['メタルジグ','ミノー','バイブレーション','ワーム','トップウォーター','タイラバ','ジグヘッド','スプーン','フローティングペンシル','泳がせ仕掛け','胴突き仕掛け','フリーリグ'];
+  const TIMES=['夜明け前','朝まずめ','午前中の潮変わり','正午前後','夕まずめ','日没直後','満潮前後','下げ潮の効き始め','潮止まり直前'];
+  const ACTIONS=['ノットを結び直す','いつもより遠投する','足元を先に探る','ルアーの色を一度だけ変える','レンジを1m下げる','三投ごとに立ち位置を変える','ドラグを半目盛り緩める','最後の一投を本当に投げる'];
+
+  const deckEl=document.getElementById('deck');
+  const altar=document.getElementById('altar');
+  const statusText=document.getElementById('statusText');
+  const resetBtn=document.getElementById('resetBtn');
+  const revealBtn=document.getElementById('revealBtn');
+  const fortuneEl=document.getElementById('fortune');
+  const historyEl=document.getElementById('history');
+  const messageEl=document.getElementById('message');
+  const soundBtn=document.getElementById('soundBtn');
+  const infoDialog=document.getElementById('infoDialog');
+  const overlay=document.getElementById('overlay');
+  const omenText=document.getElementById('omenText');
+  const flash=document.getElementById('flash');
+  const lrSigil=document.getElementById('lrSigil');
+  const app=document.getElementById('app');
+  const canvas=document.getElementById('fxCanvas');
+  const ctx=canvas && canvas.getContext ? canvas.getContext('2d') : null;
+
+  let cards=[];
+  let chosen=false;
+  let soundOn=true;
+  let particles=[];
+  let audioCtx=null;
+  let bgmIntervals=[];
+  let bgmStarted=false;
+  let phase='idle';
+
+  function loadHistory(){
+    try{return JSON.parse(localStorage.getItem('fishFortuneHistory')||'[]')}catch(e){return []}
+  }
+  function saveHistory(hist){
+    try{localStorage.setItem('fishFortuneHistory',JSON.stringify(hist))}catch(e){}
+  }
+
+  const rand=a=>a[Math.floor(Math.random()*a.length)];
+  const delay=ms=>new Promise(r=>setTimeout(r,ms));
+
+  function rarityRoll(){
+    let n=Math.random()*100;
+    for(const item of RATES){ if(n<item.weight) return item.rarity; n-=item.weight; }
+    return 'LR';
+  }
+
+  function makeCard(){
+    const rarity=rarityRoll();
+    return {rarity,fish:rand(FISH[rarity])};
+  }
+
+  function resetToIdle(){
+    phase='idle';
+    chosen=false;
+    cards=[];
+    deckEl.innerHTML='';
+    deckEl.classList.add('empty');
+    deckEl.classList.remove('ready');
+    altar.classList.remove('hidden');
+    statusText.textContent='「占う」を押すと6枚のカードが配られます';
+    messageEl.textContent='BGMと効果音つき。サウンドは右上からON/OFFできます。';
+    resetBtn.textContent='占う';
+    resetBtn.disabled=false;
+    revealBtn.disabled=true;
+    fortuneEl.className='fortune-empty';
+    fortuneEl.textContent='カードを配って1枚選ぶと、釣運・ラッキー仕掛け・狙い目の時間帯を鑑定します。';
+  }
+
+  function buildDeck(){
+    cards=Array.from({length:6},makeCard);
+    deckEl.innerHTML='';
+    cards.forEach((c,i)=>{
+      const btn=document.createElement('button');
+      btn.className='card';
+      btn.setAttribute('aria-label',`${i+1}枚目のカード`);
+      btn.innerHTML=`<div class="card-inner"><div class="face back"><div class="sigil">🐟</div><div class="card-num">CARD ${String(i+1).padStart(2,'0')}</div></div><div class="face front"><div class="rarity"></div><div class="fish-icon">🐟</div><div class="fish-name"></div><small>あなたが次に釣る運命魚</small></div></div>`;
+      btn.addEventListener('click',()=>chooseCard(i,btn));
+      deckEl.appendChild(btn);
+    });
+  }
+
+  async function startDeal(){
+    if(phase==='dealing') return;
+    if(phase==='ready' || phase==='chosen'){
+      stopBGM();
+      resetToIdle();
+    }
+    phase='dealing';
+    chosen=false;
+    resetBtn.disabled=true;
+    revealBtn.disabled=true;
+    initAudio();
+    if(soundOn) startBGM();
+    buildDeck();
+    altar.classList.add('hidden');
+    deckEl.classList.remove('empty');
+    deckEl.classList.add('ready');
+    statusText.textContent='波の下からカードが現れます…';
+    messageEl.textContent='配札演出中…';
+    showOmen('運命召喚','#74f2ff');
+    soundSweep(140,420,.55);
+    spawnParticles(90,['#59e7ff','#9df4ff','#6e8fff']);
+
+    const els=[...deckEl.children];
+    for(let i=0;i<els.length;i++){
+      await delay(170);
+      els[i].classList.add('dealt');
+      playDealSound(i);
+    }
+    await delay(350);
+    phase='ready';
+    resetBtn.textContent='もう一度占う';
+    resetBtn.disabled=false;
+    statusText.textContent='6枚の中から、直感で1枚選んでください';
+    messageEl.textContent='カードは選ぶ瞬間まで完全ランダム。気になった1枚をタップ。';
+  }
+
+  async function chooseCard(index,el){
+    if(chosen || phase!=='ready') return;
+    chosen=true;
+    phase='chosen';
+    const result=cards[index];
+    [...deckEl.children].forEach((x,i)=>{x.classList.add('locked');if(i!==index)x.style.opacity='.38'});
+    resetBtn.disabled=true;
+    statusText.textContent='運命の糸が水中へ沈んでいく…';
+    messageEl.textContent='アタリを待っています…';
+    soundTone(165,.16,'triangle',.08);
+
+    const reverseChance = ['SSR','UR','LR'].includes(result.rarity) && Math.random()<.58;
+    if(reverseChance){
+      await playFakeout(result.rarity);
+    }else{
+      await playRaritySequence(result.rarity);
+    }
+
+    fillFront(el,result);
+    el.style.opacity='1';
+    el.classList.add('revealed');
+    playRevealSound(result.rarity);
+    burstFor(result.rarity);
+    await delay(850);
+    showFortune(result);
+    addHistory(result);
+    statusText.textContent=`${result.rarity}「${result.fish}」を引き当てました`;
+    messageEl.textContent=result.rarity==='LR'?'伝説は、次の一投から始まる。':'この魚との出会いを引き寄せる一投を。';
+    resetBtn.disabled=false;
+    revealBtn.disabled=false;
+  }
+
+  function fillFront(el,result){
+    el.dataset.rarity=result.rarity;
+    el.querySelector('.rarity').textContent=result.rarity;
+    el.querySelector('.fish-name').textContent=result.fish;
+    el.querySelector('.fish-icon').textContent=iconFor(result.rarity);
+  }
+  function iconFor(r){return r==='LR'?'🐉':r==='UR'?'🦈':r==='SSR'?'🐠':r==='SR'?'🐟':'🐡'}
+
+  async function playFakeout(finalRarity){
+    showOmen('……反応なし？','#c2d1df');
+    soundTone(110,.16,'sine');
+    await delay(850);
+    app.classList.add('shake');
+    await delay(420);
+    app.classList.remove('shake');
+    showOmen('確 変','#ff5be7');
+    flash.classList.add('go'); setTimeout(()=>flash.classList.remove('go'),700);
+    soundSweep(160,950,.75);
+    spawnParticles(110,['#ff55dd','#43f7ff','#ffe66b']);
+    await delay(900);
+    await playRaritySequence(finalRarity,true);
+  }
+
+  async function playRaritySequence(rarity,upgraded=false){
+    if(rarity==='R'){
+      showOmen('小さなアタリ','#d6e3ef');
+      soundTone(190,.22,'triangle');
+      await delay(800);
+    }
+    if(rarity==='SR'){
+      showOmen(upgraded?'昇格・青潮':'青潮発生','#63ecff');
+      soundSweep(180,430,.5); spawnParticles(55,['#48dfff','#baf9ff']); await delay(900);
+    }
+    if(rarity==='SSR'){
+      showOmen(upgraded?'昇格・黄金':'黄金のアタリ','#ffe268');
+      app.classList.add('shake'); soundSweep(160,700,.7); spawnParticles(90,['#ffd84e','#fff5b3']); await delay(620); app.classList.remove('shake');
+      await delay(350);
+    }
+    if(rarity==='UR'){
+      showOmen(upgraded?'超昇格・虹潮':'虹色海面','#ffffff');
+      app.classList.add('shock'); soundSweep(120,1150,1); spawnParticles(150,['#ff4dc4','#50e8ff','#fff56c','#a875ff']); await delay(950); app.classList.remove('shock');
+    }
+    if(rarity==='LR'){
+      showOmen('深海の眼','#ffe669');
+      lrSigil.classList.add('go');
+      soundSweep(70,1280,1.35); spawnParticles(220,['#ff3d00','#ffdf45','#ffffff','#6c00ff']);
+      await delay(1450); lrSigil.classList.remove('go');
+      flash.classList.add('go'); setTimeout(()=>flash.classList.remove('go'),700);
+      showOmen('L R 確 定','#fff3a6');
+      await delay(1050);
+    }
+  }
+
+  function showOmen(text,color){
+    omenText.textContent=text; omenText.style.color=color;
+    overlay.classList.remove('active'); void overlay.offsetWidth; overlay.classList.add('active');
+    setTimeout(()=>overlay.classList.remove('active'),1350);
+  }
+
+  function showFortune(result){
+    const score={R:[48,69],SR:[65,81],SSR:[79,91],UR:[90,98],LR:[99,100]}[result.rarity];
+    const luck=Math.floor(Math.random()*(score[1]-score[0]+1))+score[0];
+    fortuneEl.className='';
+    fortuneEl.innerHTML=`<div class="result-grid"><div class="result-badge">${iconFor(result.rarity)}</div><div><div class="result-title"><span class="${result.rarity}">${result.rarity}</span> ${result.fish}</div><div class="result-meta">次にあなたが釣る運命魚</div></div><div class="fortune-text">${rand(OMENS[result.rarity])}</div><div class="luck-row"><div class="luck-chip"><b>釣運</b><span>${luck} / 100</span></div><div class="luck-chip"><b>ラッキー仕掛け</b><span>${rand(LURES)}</span></div><div class="luck-chip"><b>狙い目</b><span>${rand(TIMES)}</span></div></div><div class="fortune-text">開運アクション：<b>${rand(ACTIONS)}</b></div></div>`;
+  }
+
+  function addHistory(result){
+    const now=new Date();
+    const item={...result,time:now.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})};
+    const hist=loadHistory();
+    hist.unshift(item); hist.splice(10);
+    saveHistory(hist);
+    renderHistory();
+  }
+  function renderHistory(){
+    const hist=loadHistory();
+    if(!hist.length){historyEl.innerHTML='<div class="fortune-empty">まだ履歴はありません。</div>';return;}
+    historyEl.innerHTML=hist.map(x=>`<div class="history-item"><span><b class="rank ${x.rarity}">${x.rarity}</b> ${x.fish}</span><time>${x.time}</time></div>`).join('');
+  }
+
+  async function revealRest(){
+    revealBtn.disabled=true;
+    [...deckEl.children].forEach((el,i)=>{
+      if(!el.classList.contains('revealed')){
+        fillFront(el,cards[i]);
+        setTimeout(()=>{el.style.opacity='.72';el.classList.add('revealed')},i*110);
+      }
+    });
+    messageEl.textContent='選ばなかった5枚の運命も公開しました。';
+    soundSweep(260,880,.5);
+  }
+
+  function initAudio(){
+    try{
+      const AC=window.AudioContext||window.webkitAudioContext;
+      if(!AC) return false;
+      if(!audioCtx) audioCtx=new AC();
+      if(audioCtx.state==='suspended') audioCtx.resume();
+      return true;
+    }catch(e){return false}
+  }
+  function soundTone(freq,duration,type='sine',volume=.08){
+    if(!soundOn || !initAudio() || !audioCtx)return;
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(volume,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+duration);o.connect(g).connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+duration);
+  }
+  function soundSweep(from,to,duration,volume=.055,type='sawtooth'){
+    if(!soundOn || !initAudio() || !audioCtx)return;
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(from,audioCtx.currentTime);o.frequency.exponentialRampToValueAtTime(to,audioCtx.currentTime+duration);g.gain.setValueAtTime(volume,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+duration);o.connect(g).connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+duration);
+  }
+  function playRevealSound(r){
+    const seq={R:[220,277],SR:[260,390,520],SSR:[330,495,660,990],UR:[260,520,780,1040,1320],LR:[110,220,440,880,1760]}[r];
+    seq.forEach((f,i)=>setTimeout(()=>soundTone(f,.35,r==='LR'?'sawtooth':'triangle',.055),i*105));
+  }
+  function playDealSound(i){
+    soundTone(180+i*18,.08,'square',.028);
+    setTimeout(()=>soundTone(110+i*10,.12,'triangle',.024),28);
+  }
+
+  function stopBGM(){
+    bgmIntervals.forEach(clearInterval);
+    bgmIntervals=[];
+    bgmStarted=false;
+  }
+  function startBGM(){
+    if(bgmStarted || !soundOn) return;
+    initAudio();
+    bgmStarted=true;
+    let padStep=0;
+    const padProg=[ [174.61,261.63,349.23], [196.00,293.66,392.00], [164.81,246.94,329.63], [146.83,220.00,293.66] ];
+    const padTimer=setInterval(()=>{
+      const chord=padProg[padStep%padProg.length];
+      chord.forEach((f,j)=>setTimeout(()=>soundTone(f,1.8,'sine',j===0?.018:.013),j*80));
+      soundTone(chord[0]/2,1.6,'triangle',.015);
+      padStep++;
+    },1800);
+    let sparkle=0;
+    const sparkleNotes=[523.25,659.25,783.99,698.46,587.33,880.00];
+    const sparkleTimer=setInterval(()=>{
+      soundTone(sparkleNotes[sparkle%sparkleNotes.length],.28,'triangle',.015);
+      sparkle++;
+    },520);
+    bgmIntervals.push(padTimer,sparkleTimer);
+  }
+
+  function resize(){
+    if(!canvas || !ctx) return;
+    canvas.width=innerWidth*devicePixelRatio;canvas.height=innerHeight*devicePixelRatio;ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0)
+  }
+  if(ctx){addEventListener('resize',resize);resize();}
+  function spawnParticles(count,colors){
+    for(let i=0;i<count;i++) particles.push({x:innerWidth/2+(Math.random()-.5)*120,y:innerHeight*.42,vx:(Math.random()-.5)*13,vy:-Math.random()*12-2,g:.18+Math.random()*.12,size:2+Math.random()*7,life:60+Math.random()*55,color:rand(colors),shape:Math.random()>.5?'rect':'circle'});
+  }
+  function burstFor(r){const n={R:25,SR:55,SSR:100,UR:165,LR:260}[r];const c={R:['#dce7f2'],SR:['#42e9ff','#c8fbff'],SSR:['#ffd349','#fff2a6'],UR:['#ff45d4','#45e8ff','#fff05f','#9f67ff'],LR:['#ff3600','#ffd93d','#ffffff','#7400ff']}[r];spawnParticles(n,c)}
+  function animate(){
+    if(!ctx) return;
+    ctx.clearRect(0,0,innerWidth,innerHeight);particles=particles.filter(p=>p.life>0);for(const p of particles){p.x+=p.vx;p.y+=p.vy;p.vy+=p.g;p.vx*=.992;p.life--;ctx.globalAlpha=Math.min(1,p.life/25);ctx.fillStyle=p.color;ctx.beginPath();if(p.shape==='circle'){ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill()}else{ctx.fillRect(p.x,p.y,p.size*1.7,p.size*.6)}}ctx.globalAlpha=1;requestAnimationFrame(animate)
+  }
+
+  resetBtn.addEventListener('click',startDeal);
+  revealBtn.addEventListener('click',revealRest);
+  soundBtn.addEventListener('click',()=>{
+    soundOn=!soundOn;
+    soundBtn.textContent=soundOn?'🔊':'🔇';
+    if(soundOn){ initAudio(); startBGM(); soundTone(520,.15,'triangle'); }
+    else stopBGM();
+  });
+  document.getElementById('infoBtn').addEventListener('click',()=>{
+    if(infoDialog.showModal) infoDialog.showModal();
+    else infoDialog.setAttribute('open','');
+  });
+  document.getElementById('closeInfo').addEventListener('click',()=>{
+    if(infoDialog.close) infoDialog.close();
+    else infoDialog.removeAttribute('open');
+  });
+  infoDialog.addEventListener('click',e=>{if(e.target===infoDialog){if(infoDialog.close)infoDialog.close();else infoDialog.removeAttribute('open')}});
+
+  renderHistory();
+  resetToIdle();
+  if(ctx) requestAnimationFrame(animate);
+})();
+</script>
+</body>
+</html>
