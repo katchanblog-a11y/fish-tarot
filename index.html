@@ -46,6 +46,11 @@ h1{font-size:clamp(18px,4.2vw,32px);margin:0;letter-spacing:.08em;text-shadow:0 
 .stage::before{content:"";position:absolute;inset:0;pointer-events:none;background:
   linear-gradient(90deg,transparent 49.8%,rgba(255,255,255,.025) 50%,transparent 50.2%),
   linear-gradient(0deg,transparent 49.8%,rgba(255,255,255,.02) 50%,transparent 50.2%)}
+.stage::after{content:"";position:absolute;inset:-30%;pointer-events:none;z-index:1;opacity:.22;mix-blend-mode:screen;background:
+  repeating-radial-gradient(ellipse at 25% 15%,transparent 0 54px,rgba(89,225,255,.055) 56px 60px,transparent 63px 98px),
+  repeating-radial-gradient(ellipse at 75% 32%,transparent 0 72px,rgba(195,118,255,.04) 74px 79px,transparent 82px 126px);
+  filter:blur(7px);animation:stageCaustics 11s linear infinite}
+@keyframes stageCaustics{0%{transform:translate3d(-3%,-2%,0) rotate(-2deg) scale(1.03)}50%{transform:translate3d(4%,3%,0) rotate(2deg) scale(1.08)}100%{transform:translate3d(-3%,-2%,0) rotate(-2deg) scale(1.03)}}
 .stage.shake{animation:screenShake .48s linear}
 @keyframes screenShake{0%,100%{transform:none}15%{transform:translate(-8px,5px) rotate(-.4deg)}35%{transform:translate(9px,-5px) rotate(.45deg)}55%{transform:translate(-5px,3px)}75%{transform:translate(5px,-3px)}}
 .statusbar{position:relative;z-index:8;padding:14px 16px 0;display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
@@ -333,7 +338,8 @@ const CATEGORY=[
 ];
 
 let state='idle',cards=[],chosen=false,forcedRarity=null,soundOn=true,history=[];
-let bgParticles=[],fxParticles=[],rings=[],lightnings=[],fishShadows=[],rays=[];
+let bgParticles=[],fxParticles=[],rings=[],lightnings=[],stormBolts=[],fishShadows=[],rays=[],waterSweeps=[],mistPuffs=[];
+let ambientMode='idle',nextAmbientBolt=0;
 let audio={};
 
 function rand(a){return a[Math.floor(Math.random()*a.length)]}
@@ -342,7 +348,7 @@ function safeGet(){try{return JSON.parse(localStorage.getItem('fishTarotHistory'
 function safeSet(v){try{localStorage.setItem('fishTarotHistory',JSON.stringify(v))}catch(e){}}
 function rarityRoll(){if(forcedRarity){const r=forcedRarity;forcedRarity=null;return r}let n=Math.random()*100;for(const x of RATES){if(n<x.weight)return x.rarity;n-=x.weight}return'LR'}
 function makeCard(){const rarity=rarityRoll();return{rarity,fish:rand(FISH[rarity])}}
-function resize(){for(const c of [bgCanvas,fxCanvas]){c.width=innerWidth*devicePixelRatio;c.height=innerHeight*devicePixelRatio}bg.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);fx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0)}
+function resize(){const dpr=Math.min(devicePixelRatio||1,2);for(const c of [bgCanvas,fxCanvas]){c.width=innerWidth*dpr;c.height=innerHeight*dpr}bg.setTransform(dpr,0,0,dpr,0,0);fx.setTransform(dpr,0,0,dpr,0,0)}
 addEventListener('resize',resize);resize();
 
 function initAudio(){
@@ -361,10 +367,53 @@ function startBgm(){if(!soundOn)return;initAudio();if(audio.bgm_abyss.paused){au
 function stopBgm(){if(audio.bgm_abyss){audio.bgm_abyss.pause();audio.bgm_abyss.currentTime=0}}
 
 function emitParticles(count,color,x=innerWidth/2,y=innerHeight*.45,power=12,type='spark'){
-  for(let i=0;i<count;i++){const a=Math.random()*Math.PI*2,p=Math.random()*power;fxParticles.push({x,y,vx:Math.cos(a)*p,vy:Math.sin(a)*p-(type==='spark'?3:0),life:40+Math.random()*80,max:120,size:1.5+Math.random()*6,color:Array.isArray(color)?rand(color):color,type,rot:Math.random()*6.28,spin:(Math.random()-.5)*.25})}
+  const mobile=innerWidth<520,actual=mobile?Math.ceil(count*.72):count;
+  for(let i=0;i<actual;i++){
+    const a=Math.random()*Math.PI*2,p=Math.random()*power;
+    fxParticles.push({x,y,vx:Math.cos(a)*p,vy:Math.sin(a)*p-(type==='spark'?3:0),life:40+Math.random()*80,max:120,size:1.5+Math.random()*6,color:Array.isArray(color)?rand(color):color,type,rot:Math.random()*6.28,spin:(Math.random()-.5)*.25,phase:Math.random()*Math.PI*2,wobble:.02+Math.random()*.05});
+  }
+}
+function bubbleBurst(count,color,x=innerWidth/2,y=innerHeight*.55,spread=260,rise=4){
+  const palette=Array.isArray(color)?color:[color],actual=innerWidth<520?Math.ceil(count*.72):count;
+  for(let i=0;i<actual;i++)fxParticles.push({x:x+(Math.random()-.5)*spread,y:y+(Math.random()-.5)*spread*.25,vx:(Math.random()-.5)*1.6,vy:-(.7+Math.random()*rise),life:70+Math.random()*95,max:165,size:2+Math.random()*10,color:rand(palette),type:'bubble',rot:0,spin:0,phase:Math.random()*6.28,wobble:.035+Math.random()*.07});
+}
+function waterSplash(count,color,x=innerWidth/2,y=innerHeight*.48,power=17){
+  const palette=Array.isArray(color)?color:[color],actual=innerWidth<520?Math.ceil(count*.68):count;
+  for(let i=0;i<actual;i++){const a=-Math.PI+Math.random()*Math.PI,p=3+Math.random()*power;fxParticles.push({x,y,vx:Math.cos(a)*p,vy:Math.sin(a)*p-4,life:45+Math.random()*55,max:100,size:1.2+Math.random()*3.5,color:rand(palette),type:'droplet',rot:Math.random()*6.28,spin:(Math.random()-.5)*.2,phase:0,wobble:0});}
 }
 function ring(color,x=innerWidth/2,y=innerHeight*.44,speed=9,max=700,width=3){rings.push({x,y,r:8,speed,max,color,life:1,width})}
 function lightning(color,x=innerWidth/2,y=innerHeight*.44,count=7){for(let i=0;i<count;i++)lightnings.push({x,y,angle:Math.random()*Math.PI*2,len:100+Math.random()*360,color,life:14+Math.random()*15})}
+function makeBoltPoints(x1,y1,x2,y2,levels=6){
+  let pts=[{x:x1,y:y1},{x:x2,y:y2}];
+  for(let l=0;l<levels;l++){
+    const next=[];
+    for(let i=0;i<pts.length-1;i++){
+      const a=pts[i],b=pts[i+1],dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1,offset=(Math.random()-.5)*len*(.34/(l+1));
+      next.push(a,{x:(a.x+b.x)/2-dy/len*offset,y:(a.y+b.y)/2+dx/len*offset});
+    }
+    next.push(pts[pts.length-1]);pts=next;
+  }
+  return pts;
+}
+function screenLightning(color='#dffcff',intensity=1,count=2,targetX=innerWidth/2,targetY=innerHeight*.43){
+  const actual=innerWidth<520?Math.max(1,Math.ceil(count*.7)):count;
+  for(let i=0;i<actual;i++){
+    const edge=Math.floor(Math.random()*3);let x1,y1;
+    if(edge===0){x1=Math.random()*innerWidth;y1=-20}else if(edge===1){x1=-20;y1=Math.random()*innerHeight*.65}else{x1=innerWidth+20;y1=Math.random()*innerHeight*.65}
+    const x2=targetX+(Math.random()-.5)*180,y2=targetY+(Math.random()-.5)*130;
+    const points=makeBoltPoints(x1,y1,x2,y2,5+Math.floor(intensity));
+    const branches=[];
+    for(let b=4;b<points.length-4;b+=7+Math.floor(Math.random()*5)){
+      if(Math.random()<.62){const p=points[b],ang=Math.atan2(y2-y1,x2-x1)+(Math.random()<.5?-1:1)*(0.65+Math.random()*.8),len=(45+Math.random()*120)*intensity;branches.push(makeBoltPoints(p.x,p.y,p.x+Math.cos(ang)*len,p.y+Math.sin(ang)*len,3));}
+    }
+    stormBolts.push({points,branches,color,life:10+Math.random()*9,maxLife:19,width:1.4+intensity*.8,flicker:Math.random()*10});
+  }
+}
+function waterSweep(color='#5defff',count=2,power=1){
+  for(let i=0;i<count;i++)waterSweeps.push({x:-innerWidth*.45-Math.random()*200,y:innerHeight*(.28+Math.random()*.48),speed:(10+Math.random()*10)*power,amp:18+Math.random()*34,phase:Math.random()*6.28,life:Math.ceil(innerWidth/(10*power))+80,maxLife:Math.ceil(innerWidth/(10*power))+80,width:18+Math.random()*38,color});
+}
+function mistBurst(color='rgba(100,225,255,.18)',count=7,x=innerWidth/2,y=innerHeight*.48){for(let i=0;i<count;i++)mistPuffs.push({x:x+(Math.random()-.5)*260,y:y+(Math.random()-.5)*160,vx:(Math.random()-.5)*1.2,vy:-.2-Math.random()*.55,r:45+Math.random()*110,life:55+Math.random()*75,max:130,color});}
+function setAmbientMode(mode){ambientMode=mode;nextAmbientBolt=performance.now()+2500+Math.random()*4500}
 function fishShadow(color='#9deaff',scale=1){fishShadows.push({x:-220,y:innerHeight*(.28+Math.random()*.38),vx:10+Math.random()*8,life:innerWidth/10+80,color,scale,alpha:.2+Math.random()*.25})}
 function addRays(color,count=16){for(let i=0;i<count;i++)rays.push({a:(Math.PI*2/count)*i+Math.random()*.15,len:100+Math.random()*350,width:2+Math.random()*8,color,life:45+Math.random()*40})}
 function flashScreen(){flash.classList.remove('go');void flash.offsetWidth;flash.classList.add('go')}
@@ -384,8 +433,14 @@ function animateBg(){
   const grd=bg.createRadialGradient(innerWidth*.5,innerHeight*.12,0,innerWidth*.5,innerHeight*.5,Math.max(innerWidth,innerHeight));
   grd.addColorStop(0,'rgba(80,24,142,.14)');grd.addColorStop(.45,'rgba(6,54,96,.09)');grd.addColorStop(1,'rgba(0,0,0,0)');
   bg.fillStyle=grd;bg.fillRect(0,0,innerWidth,innerHeight);
-  if(bgParticles.length<110){for(let i=0;i<4;i++)bgParticles.push({x:Math.random()*innerWidth,y:innerHeight+20,vx:(Math.random()-.5)*.18,vy:-(.15+Math.random()*.65),r:.6+Math.random()*2.5,a:.08+Math.random()*.28})}
-  for(const p of bgParticles){p.x+=p.vx;p.y+=p.vy;if(p.y<-20){p.y=innerHeight+20;p.x=Math.random()*innerWidth}bg.beginPath();bg.arc(p.x,p.y,p.r,0,Math.PI*2);bg.fillStyle=`rgba(132,221,255,${p.a})`;bg.fill()}
+  const bubbleLimit=innerWidth<520?125:220;
+  if(bgParticles.length<bubbleLimit){for(let i=0;i<5;i++)bgParticles.push({x:Math.random()*innerWidth,y:innerHeight+30+Math.random()*120,vx:(Math.random()-.5)*.22,vy:-(.22+Math.random()*1.05),r:1+Math.random()*5.8,a:.08+Math.random()*.30,phase:Math.random()*6.28,wobble:.012+Math.random()*.035})}
+  const now=performance.now()*.001;
+  for(const p of bgParticles){p.phase+=p.wobble;p.x+=p.vx+Math.sin(p.phase)*.22;p.y+=p.vy;if(p.y<-30){p.y=innerHeight+30+Math.random()*100;p.x=Math.random()*innerWidth}
+    bg.beginPath();bg.arc(p.x,p.y,p.r,0,Math.PI*2);bg.strokeStyle=`rgba(132,221,255,${p.a})`;bg.lineWidth=Math.max(.6,p.r*.18);bg.stroke();
+    if(p.r>2.4){bg.beginPath();bg.arc(p.x-p.r*.28,p.y-p.r*.32,Math.max(.45,p.r*.16),0,Math.PI*2);bg.fillStyle=`rgba(235,252,255,${Math.min(.55,p.a*1.7)})`;bg.fill()}
+  }
+  if((ambientMode==='ready'||ambientMode==='revealing')&&performance.now()>nextAmbientBolt){screenLightning(ambientMode==='revealing'?'#d9f7ff':'#8bdcff',.7,1,innerWidth/2,innerHeight*.38);nextAmbientBolt=performance.now()+4500+Math.random()*6500}
   bg.save();bg.globalCompositeOperation='lighter';
   const t=performance.now()*.00015;
   for(let i=0;i<7;i++){bg.save();bg.translate(innerWidth*(.1+i*.14),-30);bg.rotate(-.14+Math.sin(t+i)*.025);const g=bg.createLinearGradient(0,0,0,innerHeight*.75);g.addColorStop(0,'rgba(180,130,255,.04)');g.addColorStop(1,'rgba(70,200,255,0)');bg.fillStyle=g;bg.beginPath();bg.moveTo(-18,0);bg.lineTo(80,innerHeight*.75);bg.lineTo(-60,innerHeight*.75);bg.closePath();bg.fill();bg.restore()}
@@ -395,13 +450,23 @@ function animateBg(){
 function animateFx(){
   fx.clearRect(0,0,innerWidth,innerHeight);fx.save();fx.globalCompositeOperation='lighter';
   fxParticles=fxParticles.filter(p=>p.life>0);
-  for(const p of fxParticles){p.x+=p.vx;p.y+=p.vy;p.vy+=(p.type==='bubble'?-.015:.13);p.vx*=.991;p.life--;p.rot+=p.spin;const a=Math.min(1,p.life/24);fx.globalAlpha=a;fx.fillStyle=p.color;fx.shadowColor=p.color;fx.shadowBlur=12;
+  for(const p of fxParticles){
+    if(p.type==='bubble'){p.phase+=p.wobble;p.x+=p.vx+Math.sin(p.phase)*.42;p.y+=p.vy;p.vy-=.006}
+    else{p.x+=p.vx;p.y+=p.vy;p.vy+=.13;p.vx*=.991}
+    p.life--;p.rot+=p.spin;const a=Math.min(1,p.life/24);fx.globalAlpha=a;fx.fillStyle=p.color;fx.shadowColor=p.color;fx.shadowBlur=p.type==='bubble'?9:12;
     if(p.type==='shard'){fx.save();fx.translate(p.x,p.y);fx.rotate(p.rot);fx.fillRect(-p.size*1.8,-1,p.size*3.6,2);fx.restore()}
-    else if(p.type==='bubble'){fx.beginPath();fx.arc(p.x,p.y,p.size,0,Math.PI*2);fx.strokeStyle=p.color;fx.lineWidth=1;fx.stroke()}
+    else if(p.type==='droplet'){fx.save();fx.translate(p.x,p.y);fx.rotate(Math.atan2(p.vy,p.vx));fx.beginPath();fx.ellipse(0,0,p.size*2.8,Math.max(.7,p.size*.55),0,0,Math.PI*2);fx.fill();fx.restore()}
+    else if(p.type==='bubble'){fx.beginPath();fx.arc(p.x,p.y,p.size,0,Math.PI*2);fx.strokeStyle=p.color;fx.lineWidth=Math.max(.8,p.size*.14);fx.stroke();fx.beginPath();fx.arc(p.x-p.size*.3,p.y-p.size*.35,Math.max(.6,p.size*.15),0,Math.PI*2);fx.fillStyle='#ffffff';fx.globalAlpha=a*.7;fx.fill()}
     else{fx.beginPath();fx.arc(p.x,p.y,p.size,0,Math.PI*2);fx.fill()}
   }
   rings=rings.filter(r=>r.r<r.max);for(const r of rings){r.r+=r.speed;fx.globalAlpha=Math.max(0,1-r.r/r.max);fx.strokeStyle=r.color;fx.lineWidth=r.width;fx.shadowColor=r.color;fx.shadowBlur=16;fx.beginPath();fx.arc(r.x,r.y,r.r,0,Math.PI*2);fx.stroke()}
   lightnings=lightnings.filter(l=>l.life>0);for(const l of lightnings){l.life--;fx.globalAlpha=l.life/28;fx.strokeStyle=l.color;fx.lineWidth=1.2;fx.shadowColor=l.color;fx.shadowBlur=15;fx.beginPath();fx.moveTo(l.x,l.y);let px=l.x,py=l.y;const seg=8;for(let i=1;i<=seg;i++){const d=l.len*i/seg;const nx=l.x+Math.cos(l.angle)*d+(Math.random()-.5)*28,ny=l.y+Math.sin(l.angle)*d+(Math.random()-.5)*28;fx.lineTo(nx,ny);px=nx;py=ny}fx.stroke()}
+  stormBolts=stormBolts.filter(b=>b.life>0);for(const b of stormBolts){b.life--;const flicker=.55+Math.random()*.7,alpha=Math.min(1,b.life/5)*flicker;fx.lineJoin='round';fx.lineCap='round';
+    const drawPath=(pts,width,a)=>{fx.globalAlpha=alpha*a;fx.strokeStyle=b.color;fx.lineWidth=width;fx.shadowColor=b.color;fx.shadowBlur=width*8;fx.beginPath();fx.moveTo(pts[0].x,pts[0].y);for(let i=1;i<pts.length;i++)fx.lineTo(pts[i].x+(Math.random()-.5)*1.8,pts[i].y+(Math.random()-.5)*1.8);fx.stroke()};
+    drawPath(b.points,b.width*4,.16);drawPath(b.points,b.width,1);fx.strokeStyle='#fff';fx.shadowBlur=5;drawPath(b.points,Math.max(.55,b.width*.3),.8);for(const br of b.branches){drawPath(br,Math.max(.55,b.width*.55),.62)}
+  }
+  waterSweeps=waterSweeps.filter(w=>w.life>0&&w.x<innerWidth*1.5);for(const w of waterSweeps){w.x+=w.speed;w.phase+=.12;w.life--;const a=Math.min(.42,w.life/w.maxLife);fx.globalAlpha=a;fx.strokeStyle=w.color;fx.lineWidth=w.width;fx.shadowColor=w.color;fx.shadowBlur=w.width*1.4;fx.beginPath();for(let i=0;i<=18;i++){const xx=w.x+i*34,yy=w.y+Math.sin(w.phase+i*.55)*w.amp+(i-9)*1.5;if(i===0)fx.moveTo(xx,yy);else fx.lineTo(xx,yy)}fx.stroke();fx.globalAlpha=a*.55;fx.lineWidth=Math.max(1.2,w.width*.12);fx.strokeStyle='#e8fdff';fx.stroke()}
+  mistPuffs=mistPuffs.filter(m=>m.life>0);for(const m of mistPuffs){m.x+=m.vx;m.y+=m.vy;m.r+=.45;m.life--;const a=Math.min(.18,m.life/m.max*.18);const g=fx.createRadialGradient(m.x,m.y,0,m.x,m.y,m.r);g.addColorStop(0,m.color);g.addColorStop(1,'rgba(0,0,0,0)');fx.globalAlpha=a;fx.fillStyle=g;fx.beginPath();fx.arc(m.x,m.y,m.r,0,Math.PI*2);fx.fill()}
   fishShadows=fishShadows.filter(f=>f.life>0);for(const f of fishShadows){f.x+=f.vx;f.life--;drawFishShape(fx,f.x,f.y,f.scale,f.color,f.alpha*Math.min(1,f.life/30))}
   rays=rays.filter(r=>r.life>0);for(const r of rays){r.life--;fx.save();fx.translate(innerWidth/2,innerHeight*.44);fx.rotate(r.a);fx.globalAlpha=Math.min(1,r.life/25)*.32;const g=fx.createLinearGradient(0,0,r.len,0);g.addColorStop(0,r.color);g.addColorStop(1,'transparent');fx.fillStyle=g;fx.fillRect(15,-r.width/2,r.len,r.width);fx.restore()}
   fx.restore();fx.globalAlpha=1;requestAnimationFrame(animateFx);
@@ -450,7 +515,7 @@ function createDeck(){
 async function dealCards(){
   if(state==='dealing')return;
   if(state!=='idle')resetAll();
-  state='dealing';drawBtn.disabled=true;revealBtn.disabled=true;chosen=false;
+  state='dealing';setAmbientMode('dealing');drawBtn.disabled=true;revealBtn.disabled=true;chosen=false;
   initAudio();startBgm();intro.classList.add('hidden');deck.classList.add('ready');createDeck();
   statusText.textContent='深海の門が開き、運命のカードを引き上げています…';helperText.textContent='配札演出中…';
   play('reverse_swell',.7);emitParticles(100,['#b76cff','#58e9ff'],innerWidth/2,innerHeight*.42,11);ring('#a866ff');ring('#5ce9ff',innerWidth/2,innerHeight*.42,6,520,2);addRays('rgba(177,103,255,.9)',20);
@@ -462,34 +527,34 @@ async function dealCards(){
     const p=positions[i],c=els[i];c.classList.add('dealt');c.style.transition='transform .82s cubic-bezier(.12,.9,.18,1),opacity .35s';c.style.transform=`translate(${p.x-c.offsetWidth/2}px,${p.y-c.offsetHeight/2}px) rotate(${p.r}deg) scale(1)`;
     play('card_deal',.8,.92+i*.025);emitParticles(24,['#d3a4ff','#6feeff'],innerWidth*(.25+.1*i),innerHeight*.42,6,'shard');ring('#9c5cff',innerWidth*(.25+.1*i),innerHeight*.42,4,180,1.3);await sleep(170);
   }
-  await sleep(420);state='ready';drawBtn.disabled=false;statusText.textContent='6枚の中から、直感で1枚選んでください';helperText.textContent='高レアほど演出が変化。SSR以上では反転・昇格演出が発生することがあります。';
+  await sleep(420);state='ready';setAmbientMode('ready');drawBtn.disabled=false;statusText.textContent='6枚の中から、直感で1枚選んでください';helperText.textContent='高レアほど演出が変化。SSR以上では反転・昇格演出が発生することがあります。';
 }
 function fillCard(el,d){el.dataset.rarity=d.rarity;el.querySelector('.rank').textContent=d.rarity;el.querySelector('.rank').className=`rank ${d.rarity}`;el.querySelector('.fish-art-mini').innerHTML=fishSvg(d.fish,colorFor(d.rarity));el.querySelector('.fish-name').textContent=d.fish}
 async function chooseCard(index,el){
   if(chosen||state!=='ready')return;
-  chosen=true;state='revealing';drawBtn.disabled=true;revealBtn.disabled=true;
+  chosen=true;state='revealing';setAmbientMode('revealing');drawBtn.disabled=true;revealBtn.disabled=true;
   const d=cards[index],els=[...deck.children],w=deck.clientWidth,h=deck.clientHeight;
   statusText.textContent='選ばれたカードが、海底の真実へ接続しています…';helperText.textContent='音量を上げると、確定演出の低音まで聞こえます。';
   play('card_select',.95);play('whoosh_rise',.55);fishShadow('#9adfff',1.1);
   els.forEach((c,i)=>{c.classList.add('locked');c.style.transition='all .7s cubic-bezier(.18,.72,.2,1)';if(i!==index){const dir=i<index?-1:1;c.classList.add('banished');c.style.transform+=` translateX(${dir*220}px) translateY(80px) scale(.45)`}});
   el.classList.add('chosen');el.style.transform=`translate(${w/2-el.offsetWidth/2}px,${h/2-el.offsetHeight/2}px) rotate(0deg) scale(1.45)`;
-  ring('#b36bff');emitParticles(80,['#d69cff','#6eeaff'],innerWidth/2,innerHeight*.44,10);await sleep(850);
+  ring('#b36bff');waterSweep('#7cddff',2,1.25);bubbleBurst(90,['#8defff','#ffffff'],innerWidth/2,innerHeight*.66,innerWidth*.62,5);waterSplash(65,['#65eaff','#dffeff'],innerWidth/2,innerHeight*.49,14);emitParticles(80,['#d69cff','#6eeaff'],innerWidth/2,innerHeight*.44,10);await sleep(850);
   const fake=['SSR','UR','LR'].includes(d.rarity)&&Math.random()<.62;
   if(fake)await fakeout(d.rarity,el);else await raritySequence(d.rarity,el);
   if(d.rarity==='LR')await playLrMovie(d);
   fillCard(el,d);el.classList.add('revealed');play(d.rarity==='R'?'shimmer':`rarity_${d.rarity.toLowerCase()}`,.95);burst(d.rarity);await sleep(900);
-  renderResult(d);saveHistory(d);statusText.textContent=`${d.rarity}「${d.fish}」を引き当てました`;helperText.textContent=d.rarity==='LR'?'伝説は、次の一投から始まります。':'結果画面に釣り方・おすすめルアー・狙い目を表示しました。';drawBtn.disabled=false;revealBtn.disabled=false;state='done';
+  renderResult(d);saveHistory(d);statusText.textContent=`${d.rarity}「${d.fish}」を引き当てました`;helperText.textContent=d.rarity==='LR'?'伝説は、次の一投から始まります。':'結果画面に釣り方・おすすめルアー・狙い目を表示しました。';drawBtn.disabled=false;revealBtn.disabled=false;state='done';setAmbientMode('done');
 }
 async function fakeout(r,el){
-  showLabel('……静寂','#c6c2d0');stopBgm();await sleep(780);el.classList.add('cracking');shake();play('reverse_swell',.9);await sleep(700);startBgm();showLabel('運 命 反 転','#ff65de');flashScreen();play('sub_impact',1);emitParticles(160,['#ff55d7','#5defff','#ffe371'],innerWidth/2,innerHeight*.44,16,'shard');lightning('#ff73e8',innerWidth/2,innerHeight*.44,12);ring('#ff62de',innerWidth/2,innerHeight*.44,14,820,4);await sleep(1050);await raritySequence(r,el,true);
+  showLabel('……静寂','#c6c2d0');stopBgm();await sleep(780);el.classList.add('cracking');shake();play('reverse_swell',.9);await sleep(700);startBgm();showLabel('運 命 反 転','#ff65de');flashScreen();play('sub_impact',1);emitParticles(160,['#ff55d7','#5defff','#ffe371'],innerWidth/2,innerHeight*.44,16,'shard');lightning('#ff73e8',innerWidth/2,innerHeight*.44,12);screenLightning('#ff73e8',1.15,4,innerWidth/2,innerHeight*.44);waterSweep('#ff5edc',3,1.45);bubbleBurst(130,['#ff7be5','#64efff'],innerWidth/2,innerHeight*.7,innerWidth*.85,6);ring('#ff62de',innerWidth/2,innerHeight*.44,14,820,4);await sleep(1050);await raritySequence(r,el,true);
 }
 async function raritySequence(r,el,up=false){
   const c=colorFor(r);
-  if(r==='R'){showLabel('小さな波紋',c);play('water_burst',.55);ring(c);emitParticles(55,c,innerWidth/2,innerHeight*.44,8,'bubble');await sleep(820)}
-  if(r==='SR'){showLabel(up?'昇格・青潮':'青潮発生',c);play('rarity_sr',.9);ring(c);ring(c,innerWidth/2,innerHeight*.44,12,760,2);fishShadow(c,1);emitParticles(100,[c,'#ffffff'],innerWidth/2,innerHeight*.44,13,'bubble');await sleep(1100)}
-  if(r==='SSR'){showLabel(up?'黄金昇格':'黄金のアタリ',c);play('rarity_ssr',1);play('sub_impact',.55);shake();addRays(c,28);ring(c,innerWidth/2,innerHeight*.44,15,900,5);lightning(c,innerWidth/2,innerHeight*.44,10);for(let i=0;i<3;i++){fishShadow(c,1.15+i*.15);await sleep(160)}emitParticles(170,[c,'#fff5b8'],innerWidth/2,innerHeight*.44,17,'shard');flashScreen();await sleep(1200)}
-  if(r==='UR'){showLabel(up?'虹 潮 覚 醒':'虹色海面',c);play('rarity_ur',1);play('sub_impact',.75);shake();flashScreen();['#ff54d7','#54edff','#fff56e','#a16cff'].forEach((x,i)=>setTimeout(()=>{ring(x,innerWidth/2,innerHeight*.44,10+i*2,920,3);lightning(x,innerWidth/2,innerHeight*.44,5)},i*90));addRays('#ffffff',38);emitParticles(230,['#ff54d7','#54edff','#fff56e','#a16cff','#fff'],innerWidth/2,innerHeight*.44,20,'shard');for(let i=0;i<5;i++){setTimeout(()=>fishShadow(['#ff54d7','#54edff','#fff56e'][i%3],1.2),i*150)}await sleep(1500)}
-  if(r==='LR'){showLabel('深 海 の 眼','#ffe3a0');play('rarity_lr',1);shake();flashScreen();ring('#ffb52e',innerWidth/2,innerHeight*.44,18,1000,6);ring('#ff3300',innerWidth/2,innerHeight*.44,13,900,4);lightning('#ffcf4d',innerWidth/2,innerHeight*.44,18);addRays('#ffd966',46);emitParticles(320,['#ff3b00','#ffcb3d','#fff','#802aff'],innerWidth/2,innerHeight*.44,23,'shard');await sleep(2700);showLabel('LEGEND RARE','#fff0a6');flashScreen();await sleep(1250)}
+  if(r==='R'){showLabel('小さな波紋',c);play('water_burst',.55);ring(c);waterSweep(c,1,.85);bubbleBurst(70,[c,'#fff'],innerWidth/2,innerHeight*.6,innerWidth*.55,3.2);waterSplash(35,c,innerWidth/2,innerHeight*.5,9);await sleep(820)}
+  if(r==='SR'){showLabel(up?'昇格・青潮':'青潮発生',c);play('rarity_sr',.9);ring(c);ring(c,innerWidth/2,innerHeight*.44,12,760,2);waterSweep(c,2,1.15);bubbleBurst(145,[c,'#ffffff'],innerWidth/2,innerHeight*.72,innerWidth*.82,5.2);waterSplash(70,[c,'#fff'],innerWidth/2,innerHeight*.49,13);fishShadow(c,1);await sleep(1100)}
+  if(r==='SSR'){showLabel(up?'黄金昇格':'黄金のアタリ',c);play('rarity_ssr',1);play('sub_impact',.55);shake();addRays(c,28);ring(c,innerWidth/2,innerHeight*.44,15,900,5);lightning(c,innerWidth/2,innerHeight*.44,10);screenLightning(c,1.15,4,innerWidth/2,innerHeight*.42);waterSweep(c,3,1.45);bubbleBurst(185,[c,'#fff5b8'],innerWidth/2,innerHeight*.75,innerWidth*.92,6);waterSplash(100,[c,'#fff'],innerWidth/2,innerHeight*.48,17);mistBurst('rgba(255,220,90,.28)',8);for(let i=0;i<3;i++){fishShadow(c,1.15+i*.15);await sleep(160)}emitParticles(170,[c,'#fff5b8'],innerWidth/2,innerHeight*.44,17,'shard');flashScreen();await sleep(1200)}
+  if(r==='UR'){showLabel(up?'虹 潮 覚 醒':'虹色海面',c);play('rarity_ur',1);play('sub_impact',.75);shake();flashScreen();['#ff54d7','#54edff','#fff56e','#a16cff'].forEach((x,i)=>setTimeout(()=>{ring(x,innerWidth/2,innerHeight*.44,10+i*2,920,3);lightning(x,innerWidth/2,innerHeight*.44,5);screenLightning(x,1.2,2,innerWidth/2,innerHeight*.42);waterSweep(x,1,1.6)},i*90));bubbleBurst(240,['#ff54d7','#54edff','#fff56e','#a16cff','#fff'],innerWidth/2,innerHeight*.78,innerWidth,7);waterSplash(150,['#ff54d7','#54edff','#fff56e','#fff'],innerWidth/2,innerHeight*.48,21);mistBurst('rgba(184,120,255,.34)',12);addRays('#ffffff',38);emitParticles(230,['#ff54d7','#54edff','#fff56e','#a16cff','#fff'],innerWidth/2,innerHeight*.44,20,'shard');for(let i=0;i<5;i++){setTimeout(()=>fishShadow(['#ff54d7','#54edff','#fff56e'][i%3],1.2),i*150)}await sleep(1500)}
+  if(r==='LR'){showLabel('深 海 の 眼','#ffe3a0');play('rarity_lr',1);shake();flashScreen();ring('#ffb52e',innerWidth/2,innerHeight*.44,18,1000,6);ring('#ff3300',innerWidth/2,innerHeight*.44,13,900,4);lightning('#ffcf4d',innerWidth/2,innerHeight*.44,18);screenLightning('#fff0a1',1.8,8,innerWidth/2,innerHeight*.4);screenLightning('#ff3b00',1.45,5,innerWidth/2,innerHeight*.45);waterSweep('#ffbd36',5,1.9);bubbleBurst(340,['#ffcc48','#fff','#7deeff','#ff542d'],innerWidth/2,innerHeight*.82,innerWidth*1.1,8.5);waterSplash(220,['#ffcc48','#fff','#ff542d'],innerWidth/2,innerHeight*.5,26);mistBurst('rgba(255,125,25,.38)',16);addRays('#ffd966',46);emitParticles(320,['#ff3b00','#ffcb3d','#fff','#802aff'],innerWidth/2,innerHeight*.44,23,'shard');await sleep(2700);showLabel('LEGEND RARE','#fff0a6');flashScreen();await sleep(1250)}
 }
 function burst(r){const cfg={R:[50,['#dce7f1']],SR:[110,['#62eaff','#fff']],SSR:[190,['#ffe16b','#fff3b0']],UR:[270,['#ff55d8','#5aefff','#fff66c','#a871ff']],LR:[380,['#ff3b00','#ffd34b','#fff','#732cff']]}[r];emitParticles(cfg[0],cfg[1],innerWidth/2,innerHeight*.44,22,'shard');ring(colorFor(r),innerWidth/2,innerHeight*.44,20,1100,6)}
 async function playLrMovie(d){
@@ -512,7 +577,7 @@ function renderResult(d){
 function saveHistory(d){history=safeGet();history.unshift({...d,time:new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})});history.splice(10);safeSet(history);renderHistory()}
 function renderHistory(){history=safeGet();historyEl.innerHTML=history.length?history.map(x=>`<div class="history-item"><b class="rank ${x.rarity}">${x.rarity}</b> ${x.fish}<time>${x.time}</time></div>`).join(''):'<div class="history-item">まだ履歴はありません。</div>'}
 function revealRest(){revealBtn.disabled=true;[...deck.children].forEach((c,i)=>{if(!c.classList.contains('revealed')){fillCard(c,cards[i]);setTimeout(()=>{c.classList.remove('banished');c.style.opacity='.72';c.classList.add('revealed')},i*100)}});helperText.textContent='選ばなかった5枚の運命も公開しました。';play('shimmer',.65)}
-function resetAll(){stopBgm();state='idle';chosen=false;cards=[];deck.innerHTML='';deck.classList.remove('ready');intro.classList.remove('hidden');resultEl.classList.remove('show');resultEl.innerHTML='';drawBtn.disabled=false;revealBtn.disabled=true;statusText.textContent='「占う」を押して、海底の運命を召喚してください';helperText.textContent='BGM・配札音・水中衝撃音・レア別確定音を内蔵しています。'}
+function resetAll(){stopBgm();setAmbientMode('idle');state='idle';chosen=false;cards=[];deck.innerHTML='';deck.classList.remove('ready');intro.classList.remove('hidden');resultEl.classList.remove('show');resultEl.innerHTML='';drawBtn.disabled=false;revealBtn.disabled=true;statusText.textContent='「占う」を押して、海底の運命を召喚してください';helperText.textContent='BGM・配札音・水中衝撃音・レア別確定音を内蔵しています。'}
 drawBtn.addEventListener('click',dealCards);resetBtn.addEventListener('click',resetAll);revealBtn.addEventListener('click',revealRest);
 soundBtn.addEventListener('click',()=>{soundOn=!soundOn;soundBtn.textContent=soundOn?'🔊':'🔇';if(soundOn){startBgm();play('shimmer',.5)}else stopBgm()});
 $('#infoBtn').addEventListener('click',()=>infoDialog.showModal());$('#closeInfo').addEventListener('click',()=>infoDialog.close());infoDialog.addEventListener('click',e=>{if(e.target===infoDialog)infoDialog.close()});
