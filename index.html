@@ -76,7 +76,7 @@ h1{font-size:clamp(18px,4.2vw,32px);margin:0;letter-spacing:.08em;text-shadow:0 
 .intro-copy span{font-size:12px;color:#a6a0c4}
 .deck{position:relative;width:min(930px,100%);height:500px;z-index:6;opacity:0;pointer-events:none;perspective:1600px}
 .deck.ready{opacity:1;pointer-events:auto}
-.card{position:absolute;left:50%;top:50%;width:clamp(98px,18vw,155px);aspect-ratio:2/3;border:0;background:none;padding:0;cursor:pointer;transform-style:preserve-3d;opacity:0;filter:drop-shadow(0 22px 30px rgba(0,0,0,.72));transition:filter .25s ease,opacity .25s ease}
+.card{position:absolute;left:0;top:0;width:clamp(98px,18vw,155px);aspect-ratio:2/3;border:0;background:none;padding:0;cursor:pointer;transform-style:preserve-3d;opacity:0;filter:drop-shadow(0 22px 30px rgba(0,0,0,.72));transition:filter .25s ease,opacity .25s ease}
 .card.dealt{opacity:1}
 .card:not(.locked):hover{filter:drop-shadow(0 26px 36px rgba(163,91,255,.5)) brightness(1.12)}
 .card-inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform 1.05s cubic-bezier(.15,.76,.14,1)}
@@ -122,10 +122,10 @@ h1{font-size:clamp(18px,4.2vw,32px);margin:0;letter-spacing:.08em;text-shadow:0 
 .secondary-btn{padding:11px 16px;background:rgba(10,9,27,.72);color:#ccc5df}
 button:disabled{opacity:.42;cursor:not-allowed;animation:none}
 .helper{text-align:center;min-height:18px;color:#918ba8;font-size:11px;padding:0 12px 14px}
-.result{display:none;position:relative;z-index:10;margin:0 14px 16px;border-radius:22px;border:1px solid rgba(255,255,255,.13);background:rgba(5,7,18,.82);backdrop-filter:blur(18px);overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.55)}
+.result{display:none;position:relative;z-index:10;margin:0 14px 16px;scroll-margin-top:14px;border-radius:22px;border:1px solid rgba(255,255,255,.13);background:rgba(5,7,18,.82);backdrop-filter:blur(18px);overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.55)}
 .result.show{display:block;animation:resultIn .75s cubic-bezier(.15,.8,.17,1)}
 @keyframes resultIn{from{opacity:0;transform:translateY(28px) scale(.96)}to{opacity:1;transform:none}}
-.result-grid{display:grid;grid-template-columns:340px 1fr;gap:0}
+.result-grid{display:grid;grid-template-columns:340px 1fr;gap:0;min-width:0}.result-grid>*{min-width:0}
 .result-media{position:relative;min-height:390px;background:linear-gradient(180deg,#0a3659,#061224 70%);overflow:hidden}
 .result-media img{width:100%;height:100%;object-fit:cover;display:none}
 .fallback-ocean{position:absolute;inset:0;display:grid;place-items:center;background:
@@ -139,7 +139,7 @@ button:disabled{opacity:.42;cursor:not-allowed;animation:none}
 .result-badge{position:absolute;left:14px;top:14px;padding:8px 12px;border-radius:999px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.16);font-weight:1000;letter-spacing:.12em}
 .result-info{padding:18px}
 .result-title-row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
-.result-name{font-size:clamp(24px,5vw,38px);font-weight:1000}
+.result-name{font-size:clamp(24px,5vw,38px);font-weight:1000;overflow-wrap:anywhere}
 .result-sub{font-size:11px;color:#938dab;letter-spacing:.12em;margin-top:4px}
 .info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:16px}
 .info-box{border:1px solid rgba(255,255,255,.09);border-radius:14px;background:rgba(255,255,255,.045);padding:10px}
@@ -182,7 +182,14 @@ button:disabled{opacity:.42;cursor:not-allowed;animation:none}
   .app{padding:9px 8px 32px}.sub{display:none}.stage{min-height:665px;border-radius:22px}.statusbar{padding:12px 12px 0}.arena{min-height:490px;padding:8px}.deck{height:470px}.card{width:clamp(86px,27vw,122px)}.result-grid{grid-template-columns:1fr}.result-media{min-height:310px}.info-grid{grid-template-columns:1fr}.result-info{padding:14px}.history-panel{margin-top:10px}.cine-frame{width:100vw;border-radius:0}.cinematic{background:#000}
 }
 @media(max-width:420px){
-  .stage{min-height:640px}.arena{min-height:455px}.deck{height:440px}.card{width:96px}.rates{font-size:9px}.status-main{font-size:11px}
+  .app{padding-left:max(7px,env(safe-area-inset-left));padding-right:max(7px,env(safe-area-inset-right));padding-bottom:calc(28px + env(safe-area-inset-bottom))}
+  header{align-items:flex-start}.logo{width:42px;height:42px;border-radius:14px}.icon-btn{width:38px;height:38px}
+  .stage{min-height:0}.statusbar{flex-direction:column;gap:7px;padding-left:11px;padding-right:11px}.rates{text-align:left;font-size:9px}.status-main{font-size:11px;line-height:1.55}
+  .arena{min-height:455px;padding-left:4px;padding-right:4px}.deck{height:440px}.card{width:96px}
+  .controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);padding-left:8px;padding-right:8px;gap:8px}
+  .controls button{width:100%;min-width:0;white-space:nowrap}.main-btn{padding:13px 16px}.secondary-btn{padding:10px 10px}
+  #resetBtn{grid-column:1/-1;width:min(190px,70%);justify-self:center}
+  .result{margin-left:8px;margin-right:8px}.result-media{min-height:270px}.result-name{font-size:27px}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
@@ -423,6 +430,19 @@ function cardPositions(){
     {x:w*.6,y:h*.34,r:3},{x:w*.76,y:h*.4,r:10},{x:w*.9,y:h*.54,r:18}
   ];
 }
+
+function relayoutCards(){
+  if(state!=='ready'||!deck.children.length)return;
+  const positions=cardPositions();
+  [...deck.children].forEach((c,i)=>{
+    const p=positions[i];
+    c.style.transition='transform .28s ease';
+    c.style.transform=`translate(${p.x-c.offsetWidth/2}px,${p.y-c.offsetHeight/2}px) rotate(${p.r}deg) scale(1)`;
+  });
+}
+let resizeTimer=null;
+addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(relayoutCards,120)});
+
 function createDeck(){
   cards=Array.from({length:6},makeCard);deck.innerHTML='';
   cards.forEach((d,i)=>{const c=document.createElement('button');c.className='card';c.innerHTML=`<div class="card-inner"><div class="face back"><div class="tarot-mark"><div class="card-glyph">♆</div></div><div class="card-index">ARCANA ${String(i+1).padStart(2,'0')}</div></div><div class="face front"><div class="rank"></div><div class="fish-art-mini"></div><div class="fish-name"></div><small>NEXT FISH DESTINY</small></div></div>`;c.addEventListener('click',()=>chooseCard(i,c));deck.appendChild(c)});
@@ -487,7 +507,7 @@ function loadImageSequence(img,name,fallback){
 function renderResult(d){
   const m=fishData(d.fish),luck={R:[48,69],SR:[65,82],SSR:[80,92],UR:[91,98],LR:[99,100]}[d.rarity];const score=Math.floor(Math.random()*(luck[1]-luck[0]+1))+luck[0];
   resultEl.innerHTML=`<div class="result-grid"><div class="result-media"><img id="fishPhoto" alt="${d.fish}"><div class="fallback-ocean" id="fishFallback"><div class="result-fish-svg">${fishSvg(d.fish,colorFor(d.rarity))}</div></div><div class="result-badge rank ${d.rarity}">${d.rarity}</div></div><div class="result-info"><div class="result-title-row"><div><div class="result-name">${d.fish}</div><div class="result-sub">NEXT FISH DESTINY / 釣運 ${score}</div></div></div><div class="info-grid"><div class="info-box"><b>魚種カテゴリー</b><span>${m.category}</span></div><div class="info-box"><b>狙いやすい時期</b><span>${m.season}</span></div><div class="info-box"><b>主なポイント</b><span>${m.spot}</span></div><div class="info-box"><b>おすすめルアー</b><span>${m.lure}</span></div><div class="info-box"><b>基本の釣り方</b><span>${m.method}</span></div><div class="info-box"><b>タックル目安</b><span>${m.tackle}</span></div><div class="info-box"><b>狙い目時間</b><span>${m.time}</span></div><div class="info-box"><b>開運アクション</b><span>${rand(['ノットを結び直す','三投ごとにレンジを変える','最後の一投を本当に投げる','足元から先に探る'])}</span></div></div><div class="fortune">${rand(FORTUNE[d.rarity])}</div></div></div>`;
-  resultEl.classList.add('show');loadImageSequence($('#fishPhoto'),d.fish,$('#fishFallback'));setTimeout(()=>resultEl.scrollIntoView({behavior:'smooth',block:'nearest'}),300);
+  resultEl.classList.add('show');loadImageSequence($('#fishPhoto'),d.fish,$('#fishFallback'));setTimeout(()=>resultEl.scrollIntoView({behavior:'smooth',block:'start'}),300);
 }
 function saveHistory(d){history=safeGet();history.unshift({...d,time:new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})});history.splice(10);safeSet(history);renderHistory()}
 function renderHistory(){history=safeGet();historyEl.innerHTML=history.length?history.map(x=>`<div class="history-item"><b class="rank ${x.rarity}">${x.rarity}</b> ${x.fish}<time>${x.time}</time></div>`).join(''):'<div class="history-item">まだ履歴はありません。</div>'}
